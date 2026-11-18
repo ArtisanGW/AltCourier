@@ -2,7 +2,9 @@
 ## Title: Deliveries Forever
 ## Notes: Fills mail to your alts with crafting reagents, pelts and Bind on Equip items. You press Send. Needs no other addon.
 ## Author: Artisan
-## Version: 1.2.0
+## Version: 1.3.0
+## OptionalDeps: DaylightUI
 ## SavedVariables: DeliveriesForeverDB
 
 DeliveriesForever.lua
+Skins\DaylightUI.lua

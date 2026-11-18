@@ -5,4 +5,5 @@ set -e
 luajit tests/name_test.lua
 luajit tests/mailbox_test.lua DeliveriesForever.lua open
 luajit tests/mailbox_test.lua DeliveriesForever.lua covered
+luajit tests/skin_test.lua
 echo "all tests passed"
