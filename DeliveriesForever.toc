@@ -7,4 +7,4 @@
 ## SavedVariables: DeliveriesForeverDB
 
 DeliveriesForever.lua
-Skins\DaylightUI.lua
+Interfaces\DaylightUI.lua

@@ -12,7 +12,7 @@ DaylightUI = {
     API = { major = 1, minor = 10,
         For = function(name) return { RegisterSkin = function(addon, fn) calls.skinFor = addon; skin = fn; return true end } end },
 }
-assert(loadfile("Skins/DaylightUI.lua"))("DeliveriesForever")
+assert(loadfile("Interfaces/DaylightUI.lua"))("DeliveriesForever")
 assert(calls.plugin == "DeliveriesForever", "registers as a Daylight UI plugin")
 assert(skin == nil, "no skin before login: the panel is made at login")
 scripts.OnEvent({ UnregisterAllEvents = function() end })   -- PLAYER_LOGIN
@@ -40,6 +40,6 @@ print("skin_test: ok")
 
 -- Without Daylight UI the skin file does nothing.
 DaylightUI, calls = nil, {}
-assert(loadfile("Skins/DaylightUI.lua"))("DeliveriesForever")
+assert(loadfile("Interfaces/DaylightUI.lua"))("DeliveriesForever")
 assert(next(calls) == nil, "no Daylight UI: nothing registered")
 print("skin_test without Daylight UI: ok")
