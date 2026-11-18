@@ -1,5 +1,5 @@
 -- Deliveries Forever
--- Standalone, no dependencies; a Daylight UI plugin when that is installed.
+-- A vanilla addon: it uses only the game, never another addon.
 -- When you open the Send Mail tab, fills a mail with your crafting reagents
 -- for the alt you picked, then pelts and Bind on Equip items for theirs. It
 -- never presses Send itself: you check the mail and press Send. After each
@@ -22,23 +22,6 @@ local GROUPS = {
     { key = "pelts",    label = "Pelts",    subject = "Pelts" },
     { key = "boe",      label = "BoE",      subject = "Bind on Equip" },
 }
-
--- Daylight UI, when it's installed (OptionalDeps, never required): the addon
--- registers as its plugin and takes its look, through DaylightUI.API only.
--- Without it, the addon uses the game's own templates.
-local DUI = DaylightUI and DaylightUI.API
-local me
-if DUI and DUI.major == 1 and (DUI.minor or 0) >= 1 and DaylightUI.RegisterPlugin and DUI.For then
-    pcall(DaylightUI.RegisterPlugin, DaylightUI, "DeliveriesForever", {
-        needs = { 1, 1 },
-        short = "Deliveries",
-        color = "66bbff",
-        blurb = "Fills mail to your alts with reagents, pelts and Bind on Equip items.",
-    })
-    local ok, handle = pcall(DUI.For, "DeliveriesForever")
-    me = ok and handle or nil
-end
-if not me then DUI = nil end
 
 local db
 local myKey, myName, myRealm, myFaction
@@ -197,7 +180,7 @@ end
 -- menu later failed a protected controller call (SetPreferredGamepadInteractTarget)
 -- and the game blamed this addon. So the player opens the Send Mail tab,
 -- and the mail is filled when it shows.
--- When another mail window covers the game's (Daylight UI's, say), there is
+-- When another mail window covers the game's (another addon's), there is
 -- no Send Mail tab to wait for: attachments go in through the game's send
 -- functions at once, and that window shows them.
 local function sendTabOpen()
@@ -288,8 +271,7 @@ end
 -- Panel beside the mailbox
 ---------------------------------------------------------------------------
 
--- The look: Daylight UI's (API.Skin, API.Text, API.Button, API.Menu) when it's
--- here, else the game's own templates.
+-- The look: the game's own templates.
 local Look = {}
 
 local DIALOG_BACKDROP = {
@@ -299,35 +281,17 @@ local DIALOG_BACKDROP = {
 }
 
 function Look.Shell(f)
-    if DUI then DUI.Skin(f, { window = true }) else f:SetBackdrop(DIALOG_BACKDROP) end
+    f:SetBackdrop(DIALOG_BACKDROP)
 end
 
 function Look.Text(parent, size)
-    if DUI then
-        local t = DUI.Text(parent, size)
-        local c = DUI.Colors and DUI.Colors()
-        local ink = c and (size == "head" and c.TITLE or c.TEXT)
-        if ink then t:SetTextColor(ink[1] or ink.r, ink[2] or ink.g, ink[3] or ink.b) end
-        return t
-    end
     return parent:CreateFontString(nil, "OVERLAY", size == "head" and "GameFontNormal" or "GameFontHighlightSmall")
 end
 
 -- A button whose words can change: b.Label(text).
 function Look.Button(parent, text, width, height)
-    local b
-    if DUI then
-        -- API.Button's own text isn't promised to be settable later, so the
-        -- words are a text of this addon's on top.
-        b = DUI.Button(parent, "", height)
-        b.dfLabel = DUI.Text(b, "small")
-        b.dfLabel:SetPoint("LEFT", 6, 0)
-        b.dfLabel:SetPoint("RIGHT", -6, 0)
-        function b.Label(words) b.dfLabel:SetText(words) end
-    else
-        b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-        function b.Label(words) b:SetText(words) end
-    end
+    local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    function b.Label(words) b:SetText(words) end
     b:SetSize(width, height)
     b.Label(text)
     return b
@@ -339,18 +303,6 @@ local function closePicker() if picker then picker:Hide() end end
 
 -- A small popup list under `owner`. entries = { { text = ..., onClick = fn }, ... }
 local function openList(owner, id, entries)
-    if DUI and DUI.Menu then
-        local keys, values = {}, {}
-        for i, entry in ipairs(entries) do
-            keys[i] = tostring(i)
-            values[keys[i]] = entry.text
-        end
-        DUI.Menu(owner, keys, values, nil, function(key)
-            local entry = entries[tonumber(key)]
-            if entry and entry.onClick then entry.onClick() end
-        end, math.max(owner:GetWidth(), 160))
-        return
-    end
     if not picker then
         picker = CreateFrame("Frame", nil, panel, "BackdropTemplate")
         picker:SetFrameStrata("DIALOG")
@@ -492,15 +444,9 @@ local function buildPanel()
         closePicker()
         panel:Hide()
     end
-    local close
-    if DUI and DUI.Close then
-        close = DUI.Close(panel, dismiss)
-        close:SetPoint("TOPRIGHT", -8, -8)
-    else
-        close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
-        close:SetPoint("TOPRIGHT", -2, -2)
-        close:SetScript("OnClick", dismiss)
-    end
+    local close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", -2, -2)
+    close:SetScript("OnClick", dismiss)
 
     panel.pick = {}
     for i, g in ipairs(GROUPS) do
@@ -580,13 +526,9 @@ local function buildPanel()
         SendMailFrame:HookScript("OnShow", function() if not state.owned then refill(0.1) end end)
     end
 
-    if me and me.On then
-        me.On("StyleChanged", function() Look.Shell(panel) end)
-    end
 end
 
--- Is the game's own mailbox on screen? Another mail window (Daylight UI's, or
--- any addon's) may keep it open out of sight: under a hidden frame, see-through
+-- Is the game's own mailbox on screen? Another addon's mail window may keep it open out of sight: under a hidden frame, see-through
 -- or moved off screen. Then the panel floats on its own instead.
 local function gameMailboxOnScreen()
     if not (MailFrame and MailFrame:IsVisible()) then return false end
@@ -767,11 +709,4 @@ SlashCmdList.DELIVERIESFOREVER = function(msg)
         print_("/deliveries excluded - what's never sent (or Alt-click an attachment to add one)")
     end
     if panel then panel:Update() end
-end
-
--- With Daylight UI: the same commands as /dui deliveries.
-if me and me.RegisterCommand then
-    pcall(me.RegisterCommand, "deliveries", function(args)
-        SlashCmdList.DELIVERIESFOREVER(type(args) == "string" and args or "")
-    end, "Deliveries Forever: list, add, remove, exclude, include, excluded")
 end

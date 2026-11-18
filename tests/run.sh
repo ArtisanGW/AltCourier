@@ -3,6 +3,6 @@
 cd "$(dirname "$0")/.." || exit 1
 set -e
 luajit tests/name_test.lua
-luajit tests/plugin_test.lua DeliveriesForever.lua vanilla
-luajit tests/plugin_test.lua DeliveriesForever.lua daylight
+luajit tests/mailbox_test.lua DeliveriesForever.lua open
+luajit tests/mailbox_test.lua DeliveriesForever.lua covered
 echo "all tests passed"

@@ -1,9 +1,8 @@
 ## Interface: 16001
-## Title: Deliveries Forever (DaylightUI Plugin)
-## Notes: Fills mail to your alts with crafting reagents, pelts and Bind on Equip items. You press Send. Works on its own; with Daylight UI it takes its look.
+## Title: Deliveries Forever
+## Notes: Fills mail to your alts with crafting reagents, pelts and Bind on Equip items. You press Send. Needs no other addon.
 ## Author: Artisan
-## Version: 1.1.0
-## OptionalDeps: DaylightUI
+## Version: 1.2.0
 ## SavedVariables: DeliveriesForeverDB
 
 DeliveriesForever.lua
