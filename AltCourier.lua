@@ -1,4 +1,4 @@
--- You Got Mail
+-- Alt Courier
 -- A vanilla addon: it uses only the game, never another addon.
 -- When you open the Send Mail tab, fills a mail with your crafting reagents
 -- for the alt you picked, then pelts and Bind on Equip items for theirs. It
@@ -41,7 +41,7 @@ local panel -- built at login, as part of the mailbox
 local endVisit -- ends a mailbox visit (below)
 
 local function print_(msg)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff66bbffYou Got Mail:|r " .. msg)
+    DEFAULT_CHAT_FRAME:AddMessage("|cff66bbffAlt Courier:|r " .. msg)
 end
 
 ---------------------------------------------------------------------------
@@ -359,14 +359,14 @@ local function openPicker(owner, groupKey)
     end
     openList(owner, groupKey, entries)
     if #entries == 1 then
-        print_("No alts known yet. Log into each alt once with You Got Mail on, or use /ygm add First Last.")
+        print_("No alts known yet. Log into each alt once with Alt Courier on, or use /ac add First Last.")
     end
 end
 
 local function excludeItem(itemID, name)
     if not itemID then return end
     db.exclude.items[itemID] = name or db.exclude.items[itemID] or ("item " .. itemID)
-    print_("Won't send " .. db.exclude.items[itemID] .. " any more. /ygm excluded to undo.")
+    print_("Won't send " .. db.exclude.items[itemID] .. " any more. /ac excluded to undo.")
     if panel then panel:Update() end
 end
 
@@ -421,7 +421,7 @@ local function hookAttachments()
             end)
             button:HookScript("OnEnter", function()
                 if GameTooltip:IsOwned(button) and HasSendMailItem(i) then
-                    GameTooltip:AddLine("Alt-click: never send this (You Got Mail)", 0.4, 0.73, 1)
+                    GameTooltip:AddLine("Alt-click: never send this (Alt Courier)", 0.4, 0.73, 1)
                     GameTooltip:Show()
                 end
             end)
@@ -430,14 +430,14 @@ local function hookAttachments()
 end
 
 local function buildPanel()
-    panel = CreateFrame("Frame", "YouGotMailPanel", MailFrame, "BackdropTemplate")
+    panel = CreateFrame("Frame", "AltCourierPanel", MailFrame, "BackdropTemplate")
     panel:SetSize(220, 200 + (#GROUPS - 2) * 28)
     panel:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", 4, 0)
     Look.Shell(panel)
 
     local title = Look.Text(panel, "head")
     title:SetPoint("TOP", 0, -12)
-    title:SetText("You Got Mail")
+    title:SetText("Alt Courier")
 
     -- Hides the panel until the mailbox opens again.
     local function dismiss()
@@ -600,8 +600,8 @@ events:RegisterEvent("MAIL_SEND_SUCCESS")
 
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" and arg1 == ADDON then
-        YouGotMailDB = YouGotMailDB or {}
-        db = YouGotMailDB
+        AltCourierDB = AltCourierDB or {}
+        db = AltCourierDB
         db.chars = db.chars or {}
         db.targets = db.targets or {}
         db.exclude = db.exclude or {}
@@ -638,12 +638,12 @@ events:SetScript("OnEvent", function(_, event, arg1)
 end)
 
 ---------------------------------------------------------------------------
--- /yougotmail (or /ygm)
+-- /altcourier (or /ac)
 ---------------------------------------------------------------------------
 
-SLASH_YOUGOTMAIL1 = "/yougotmail"
-SLASH_YOUGOTMAIL2 = "/ygm"
-SlashCmdList.YOUGOTMAIL = function(msg)
+SLASH_ALTCOURIER1 = "/altcourier"
+SLASH_ALTCOURIER2 = "/ac"
+SlashCmdList.ALTCOURIER = function(msg)
     local cmd, rest = (msg or ""):match("^%s*(%S*)%s*(.-)%s*$")
     cmd = cmd:lower()
     if cmd == "add" and rest ~= "" then
@@ -701,12 +701,12 @@ SlashCmdList.YOUGOTMAIL = function(msg)
         end)(), ", ")) or "No alts you can mail from here yet.")
     else
         print_("Open a mailbox and pick your alts in the panel beside it.")
-        print_("/ygm list - who gets what, and which alts are known")
-        print_("/ygm add First Last - add an alt you haven't logged into yet")
-        print_("/ygm remove Name - forget an alt")
-        print_("/ygm exclude word|[item] - never send items with that word in their name, or that item")
-        print_("/ygm include word|[item] - send it again")
-        print_("/ygm excluded - what's never sent (or Alt-click an attachment to add one)")
+        print_("/ac list - who gets what, and which alts are known")
+        print_("/ac add First Last - add an alt you haven't logged into yet")
+        print_("/ac remove Name - forget an alt")
+        print_("/ac exclude word|[item] - never send items with that word in their name, or that item")
+        print_("/ac include word|[item] - send it again")
+        print_("/ac excluded - what's never sent (or Alt-click an attachment to add one)")
     end
     if panel then panel:Update() end
 end

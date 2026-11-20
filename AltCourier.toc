@@ -1,0 +1,9 @@
+## Interface: 16001
+## Title: Alt Courier
+## Notes: Fills mail to your alts with crafting reagents, pelts and Bind on Equip items. You press Send. Commands: /ac.
+## Author: Artisan
+## Version: @project-version@
+## SavedVariables: AltCourierDB
+## IconTexture: Interface\AddOns\AltCourier\Media\icon-64.png
+
+AltCourier.lua

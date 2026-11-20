@@ -1,4 +1,4 @@
-# You Got Mail
+# Alt Courier
 
 ## 1.0.0
 
@@ -8,6 +8,6 @@ First release.
 - Crafting reagents go first, then pelts, then Bind on Equip items, each to its own alt
 - After each send, the next batch is filled in, until nothing is left
 - Pick who gets what from a small panel beside the mailbox
-- Never send an item, or anything with a word in its name: /ygm exclude
-- Add an alt you haven't logged into yet: /ygm add First Last
+- Never send an item, or anything with a word in its name: /ac exclude
+- Add an alt you haven't logged into yet: /ac add First Last
 - Uses only the game: no other addon needed

@@ -3,7 +3,7 @@
 
 ## Description
 
-Sending your crafting materials to the right alt, one item at a time, gets old fast. You Got Mail fills the mail for you: open the Send Mail tab and the next batch is already attached and addressed. You check it and press Send; it never sends anything by itself.
+Sending your crafting materials to the right alt, one item at a time, gets old fast. Alt Courier fills the mail for you: open the Send Mail tab and the next batch is already attached and addressed. You check it and press Send; it never sends anything by itself.
 
 [![Support me on Ko-fi](https://images.weserv.nl/?url=storage.ko-fi.com/cdn/kofi5.png&h=36)](https://ko-fi.com/artisangw)
 
@@ -15,11 +15,11 @@ Sending your crafting materials to the right alt, one item at a time, gets old f
 - Add an alt you haven't logged into yet
 
 ## Commands
-- /ygm list: who gets what, and which alts are known
-- /ygm add First Last: add an alt
-- /ygm remove Name: forget an alt
-- /ygm exclude word or [item]: never send it
-- /ygm include word or [item]: send it again
+- /ac list: who gets what, and which alts are known
+- /ac add First Last: add an alt
+- /ac remove Name: forget an alt
+- /ac exclude word or [item]: never send it
+- /ac include word or [item]: send it again
 
 It's a simple tool with no dependencies: it uses only the game.
 
