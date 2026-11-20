@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Deliveries Forever: a teal envelope, a white arrow sending it on its way. -->
+  <rect x="0" y="0" width="512" height="512" fill="#15202E"/>
+  <!-- the envelope: square-cornered outline and its flap -->
+  <rect x="72" y="150" width="300" height="212" fill="none" stroke="#5BE0C8" stroke-width="22"/>
+  <polyline points="72,150 222,268 372,150" fill="none" stroke="#5BE0C8" stroke-width="22" stroke-linejoin="miter"/>
+  <!-- the arrow, out to the right -->
+  <rect x="330" y="300" width="96" height="28" fill="#FFFFFF"/>
+  <polygon points="416,266 470,314 416,362" fill="#FFFFFF"/>
+</svg>

@@ -1,4 +1,4 @@
--- Deliveries Forever
+-- You Got Mail
 -- A vanilla addon: it uses only the game, never another addon.
 -- When you open the Send Mail tab, fills a mail with your crafting reagents
 -- for the alt you picked, then pelts and Bind on Equip items for theirs. It
@@ -41,7 +41,7 @@ local panel -- built at login, as part of the mailbox
 local endVisit -- ends a mailbox visit (below)
 
 local function print_(msg)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff66bbffDeliveries Forever:|r " .. msg)
+    DEFAULT_CHAT_FRAME:AddMessage("|cff66bbffYou Got Mail:|r " .. msg)
 end
 
 ---------------------------------------------------------------------------
@@ -102,8 +102,8 @@ local function rememberMe()
     myKey = keyOf(fullName(me), myRealm)
     db.chars[myKey] = me
 
-    -- Saved before last names were read: "First-Realm". Move it, and any
-    -- picker set to it, to this character's full-name key.
+    -- A key in the short form, "First-Realm": moved to this character's
+    -- full-name key, and any picker set to it with it.
     local old = keyOf(myName, myRealm)
     if old ~= myKey and db.chars[old] and not db.chars[old].last then
         db.chars[old] = nil
@@ -359,14 +359,14 @@ local function openPicker(owner, groupKey)
     end
     openList(owner, groupKey, entries)
     if #entries == 1 then
-        print_("No alts known yet. Log into each alt once with Deliveries Forever on, or use /deliveries add First Last.")
+        print_("No alts known yet. Log into each alt once with You Got Mail on, or use /ygm add First Last.")
     end
 end
 
 local function excludeItem(itemID, name)
     if not itemID then return end
     db.exclude.items[itemID] = name or db.exclude.items[itemID] or ("item " .. itemID)
-    print_("Won't send " .. db.exclude.items[itemID] .. " any more. /deliveries excluded to undo.")
+    print_("Won't send " .. db.exclude.items[itemID] .. " any more. /ygm excluded to undo.")
     if panel then panel:Update() end
 end
 
@@ -421,7 +421,7 @@ local function hookAttachments()
             end)
             button:HookScript("OnEnter", function()
                 if GameTooltip:IsOwned(button) and HasSendMailItem(i) then
-                    GameTooltip:AddLine("Alt-click: never send this (Deliveries Forever)", 0.4, 0.73, 1)
+                    GameTooltip:AddLine("Alt-click: never send this (You Got Mail)", 0.4, 0.73, 1)
                     GameTooltip:Show()
                 end
             end)
@@ -430,14 +430,14 @@ local function hookAttachments()
 end
 
 local function buildPanel()
-    panel = CreateFrame("Frame", "DeliveriesForeverPanel", MailFrame, "BackdropTemplate")
+    panel = CreateFrame("Frame", "YouGotMailPanel", MailFrame, "BackdropTemplate")
     panel:SetSize(220, 200 + (#GROUPS - 2) * 28)
     panel:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", 4, 0)
     Look.Shell(panel)
 
     local title = Look.Text(panel, "head")
     title:SetPoint("TOP", 0, -12)
-    title:SetText("Deliveries Forever")
+    title:SetText("You Got Mail")
 
     -- Hides the panel until the mailbox opens again.
     local function dismiss()
@@ -600,8 +600,8 @@ events:RegisterEvent("MAIL_SEND_SUCCESS")
 
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" and arg1 == ADDON then
-        DeliveriesForeverDB = DeliveriesForeverDB or {}
-        db = DeliveriesForeverDB
+        YouGotMailDB = YouGotMailDB or {}
+        db = YouGotMailDB
         db.chars = db.chars or {}
         db.targets = db.targets or {}
         db.exclude = db.exclude or {}
@@ -638,12 +638,12 @@ events:SetScript("OnEvent", function(_, event, arg1)
 end)
 
 ---------------------------------------------------------------------------
--- /deliveries
+-- /yougotmail (or /ygm)
 ---------------------------------------------------------------------------
 
-SLASH_DELIVERIESFOREVER1 = "/deliveries"
-SLASH_DELIVERIESFOREVER2 = "/dlv"
-SlashCmdList.DELIVERIESFOREVER = function(msg)
+SLASH_YOUGOTMAIL1 = "/yougotmail"
+SLASH_YOUGOTMAIL2 = "/ygm"
+SlashCmdList.YOUGOTMAIL = function(msg)
     local cmd, rest = (msg or ""):match("^%s*(%S*)%s*(.-)%s*$")
     cmd = cmd:lower()
     if cmd == "add" and rest ~= "" then
@@ -701,12 +701,12 @@ SlashCmdList.DELIVERIESFOREVER = function(msg)
         end)(), ", ")) or "No alts you can mail from here yet.")
     else
         print_("Open a mailbox and pick your alts in the panel beside it.")
-        print_("/deliveries list - who gets what, and which alts are known")
-        print_("/deliveries add First Last - add an alt you haven't logged into yet")
-        print_("/deliveries remove Name - forget an alt")
-        print_("/deliveries exclude word|[item] - never send items with that word in their name, or that item")
-        print_("/deliveries include word|[item] - send it again")
-        print_("/deliveries excluded - what's never sent (or Alt-click an attachment to add one)")
+        print_("/ygm list - who gets what, and which alts are known")
+        print_("/ygm add First Last - add an alt you haven't logged into yet")
+        print_("/ygm remove Name - forget an alt")
+        print_("/ygm exclude word|[item] - never send items with that word in their name, or that item")
+        print_("/ygm include word|[item] - send it again")
+        print_("/ygm excluded - what's never sent (or Alt-click an attachment to add one)")
     end
     if panel then panel:Update() end
 end

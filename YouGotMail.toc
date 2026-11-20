@@ -1,0 +1,9 @@
+## Interface: 16001
+## Title: You Got Mail
+## Notes: Fills mail to your alts with crafting reagents, pelts and Bind on Equip items. You press Send. Commands: /ygm.
+## Author: Artisan
+## Version: @project-version@
+## SavedVariables: YouGotMailDB
+## IconTexture: Interface\AddOns\YouGotMail\Media\icon-64.png
+
+YouGotMail.lua

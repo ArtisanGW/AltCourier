@@ -1,6 +1,6 @@
 -- A mailbox visit with stand-ins for the game: the game's mailbox on screen (open),
 -- or covered by another addon's mail window (covered). No other addon is loaded.
--- Run from the repo root: luajit tests/mailbox_test.lua DeliveriesForever.lua open|covered
+-- Run from the repo root: luajit tests/mailbox_test.lua YouGotMail.lua open|covered
 local file, mode = arg[1], arg[2]
 local handlers, calls = {}, {}
 local function frame(name)
@@ -22,7 +22,7 @@ local function frame(name)
 end
 CreateFrame = function(_, name, parent, template)
   local f = frame(name)
-  if name == "DeliveriesForeverPanel" then _G.P = f end
+  if name == "YouGotMailPanel" then _G.P = f end
   if template == "UIPanelCloseButton" then _G.CLOSE = f end
   return f
 end
@@ -52,11 +52,11 @@ local attached = {}; HasSendMailItem = function(i) return attached[i] ~= nil end
 ClickSendMailItemButton = function(i) attached[i] = picked.name; picked = nil end
 CursorHasItem = function() return false end; ClearCursor = function() end
 local to; SendMailNameEditBox = { SetText = function(_, t) to = t end }; SendMailSubjectEditBox = { SetText = function() end }
-DeliveriesForeverDB = { chars = { ["Bob Smith-Forever"] = { name = "Bob", last = "Smith", realm = "Forever", faction = "Alliance" } },
+YouGotMailDB = { chars = { ["Bob Smith-Forever"] = { name = "Bob", last = "Smith", realm = "Forever", faction = "Alliance" } },
   targets = { boe = "Bob Smith-Forever", reagents = "Bob Smith-Forever" } }
-assert(loadfile(file))("DeliveriesForever")
+assert(loadfile(file))("YouGotMail")
 local function fire(e, a) for _, fn in ipairs(handlers) do fn(nil, e, a) end end
-fire("ADDON_LOADED", "DeliveriesForever"); fire("PLAYER_LOGIN")
+fire("ADDON_LOADED", "YouGotMail"); fire("PLAYER_LOGIN")
 fire("MAIL_SHOW"); run()
 local function plain(s) return ((s or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("\n", " ")) end
 print(mode .. ": panel parent=" .. tostring(P.parent and P.parent.name), "status=" .. plain(P.status.text))
