@@ -12,20 +12,20 @@
   <use href="#letter" stroke="#F4A7B9" transform="translate(-6,-38)"/>
   <use href="#letter" stroke="#F6D98B" transform="translate(6,0)"/>
   <use href="#letter" stroke="#5BE0C8" transform="translate(0,38)"/>
-  <!-- the arrow: a branch curving off at 45 degrees up and one down, and one straight on (drawn last, so its color shows on the shared stem);
-       open heads, round ends -->
-  <g fill="none" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-        <g stroke="#F4A7B9">
-      <path d="M 286,256 H 316 C 362,256 380,236 398,218 L 450,166"/>
-      <polyline points="420,166 450,166 450,196"/>
+  <!-- the arrow: three stripes of color leave the stack side by side, then part: pink curves off at 45 degrees up,
+       teal down, yellow goes straight on (drawn last). Open heads, round ends. -->
+  <g fill="none" stroke-width="16" stroke-linejoin="round">
+    <g stroke="#F4A7B9">
+      <path d="M 270,240 H 316 C 358,240 380,224 398,206 L 450,154"/>
+      <polyline points="420,154 450,154 450,184" stroke-linecap="round"/>
     </g>
     <g stroke="#5BE0C8">
-      <path d="M 286,256 H 316 C 362,256 380,276 398,294 L 450,346"/>
-      <polyline points="420,346 450,346 450,316"/>
+      <path d="M 270,272 H 316 C 358,272 380,288 398,306 L 450,358"/>
+      <polyline points="420,358 450,358 450,328" stroke-linecap="round"/>
     </g>
     <g stroke="#F6D98B">
-      <path d="M 286,256 H 486"/>
-      <polyline points="456,226 486,256 456,286"/>
+      <path d="M 270,256 H 486"/>
+      <polyline points="456,226 486,256 456,286" stroke-linecap="round"/>
     </g>
   </g>
 </svg>
