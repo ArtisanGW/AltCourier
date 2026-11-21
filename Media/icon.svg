@@ -23,11 +23,11 @@
     <!-- pink and teal, under the stripe: they come out from under it as they part -->
     <g stroke="#F4A7B9">
       <path d="M 332,256 C 380,256 406,224 430,200 L 474,156"/>
-      <polyline points="428,156 474,156 474,202" stroke-linecap="round"/>
+      <polyline points="442,156 474,156 474,188" stroke-linecap="round"/>
     </g>
     <g stroke="#5BE0C8">
       <path d="M 332,256 C 380,256 406,288 430,312 L 474,356"/>
-      <polyline points="428,356 474,356 474,310" stroke-linecap="round"/>
+      <polyline points="442,356 474,356 474,324" stroke-linecap="round"/>
     </g>
     <!-- the stripe -->
     <g clip-path="url(#stripe)">
