@@ -22,12 +22,12 @@
   <g fill="none" stroke-width="16" stroke-linejoin="round">
     <!-- pink and teal, under the stripe: they come out from under it as they part -->
     <g stroke="#F4A7B9">
-      <path d="M 332,256 C 380,256 406,224 430,200 L 474,156"/>
-      <polyline points="442,156 474,156 474,188" stroke-linecap="round"/>
+      <path d="M 330,256 C 370,256 396,224 420,200 L 474,146"/>
+      <polyline points="442,146 474,146 474,178" stroke-linecap="round"/>
     </g>
     <g stroke="#5BE0C8">
-      <path d="M 332,256 C 380,256 406,288 430,312 L 474,356"/>
-      <polyline points="442,356 474,356 474,324" stroke-linecap="round"/>
+      <path d="M 330,256 C 370,256 396,288 420,312 L 474,366"/>
+      <polyline points="442,366 474,366 474,334" stroke-linecap="round"/>
     </g>
     <!-- the stripe -->
     <g clip-path="url(#stripe)">
@@ -38,8 +38,8 @@
     <!-- yellow starts as a full line once the others have parted -->
     <g stroke="#F6D98B">
       <!-- grows from the stripe's thin yellow band to a full line, in a smooth S, not a square start -->
-      <path d="M 330,252.9 H 354 C 372,252.9 374,248 392,248 H 486 V 264 H 392 C 374,264 372,259.1 354,259.1 H 330 Z" fill="#F6D98B" stroke="none"/>
-      <polyline points="453,223 486,256 453,289" stroke-linecap="round"/>
+      <path d="M 330,252.9 H 338 C 358,252.9 362,248 384,248 H 486 V 264 H 384 C 362,264 358,259.1 338,259.1 H 330 Z" fill="#F6D98B" stroke="none"/>
+      <polyline points="463,233 486,256 463,279" stroke-linecap="round"/>
     </g>
   </g>
 </svg>
