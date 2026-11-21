@@ -7,8 +7,8 @@
   <!-- the arrow: a stem that goes straight on, and a branch curving up and one down; open heads, round ends -->
   <g fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
     <path d="M 302,256 H 486"/>
-    <path d="M 350,256 C 392,256 410,234 410,190 V 108"/>
-    <path d="M 350,256 C 392,256 410,278 410,322 V 404"/>
+    <path d="M 308,256 C 366,256 410,234 410,190 V 108"/>
+    <path d="M 308,256 C 366,256 410,278 410,322 V 404"/>
     <polyline points="456,226 486,256 456,286"/>
     <polyline points="380,138 410,108 440,138"/>
     <polyline points="380,374 410,404 440,374"/>
