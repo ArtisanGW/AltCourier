@@ -4,13 +4,13 @@
   <!-- the envelope: square-cornered outline and its flap -->
   <rect x="36" y="164" width="252" height="184" fill="none" stroke="#5BE0C8" stroke-width="22"/>
   <polyline points="36,164 162,266 288,164" fill="none" stroke="#5BE0C8" stroke-width="22" stroke-linejoin="miter"/>
-  <!-- the arrow: a stem that goes straight on, and a branch curving up and one down; open heads, round ends -->
+  <!-- the arrow: a stem that goes straight on, and a branch curving off at 45 degrees up and one down; open heads, round ends -->
   <g fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
     <path d="M 302,256 H 486"/>
-    <path d="M 308,256 C 366,256 410,234 410,190 V 108"/>
-    <path d="M 308,256 C 366,256 410,278 410,322 V 404"/>
+    <path d="M 308,256 C 340,256 354,242 372,224 L 450,146"/>
+    <path d="M 308,256 C 340,256 354,270 372,288 L 450,366"/>
     <polyline points="456,226 486,256 456,286"/>
-    <polyline points="380,138 410,108 440,138"/>
-    <polyline points="380,374 410,404 440,374"/>
+    <polyline points="420,146 450,146 450,176"/>
+    <polyline points="420,366 450,366 450,336"/>
   </g>
 </svg>
