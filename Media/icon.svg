@@ -38,7 +38,7 @@
     <!-- yellow starts as a full line once the others have parted -->
     <g stroke="#F6D98B">
       <!-- grows from the stripe's thin yellow band to a full line, in a smooth S, not a square start -->
-      <path d="M 330,252.9 C 362,252.9 360,248 392,248 H 486 V 264 H 392 C 360,264 362,259.1 330,259.1 Z" fill="#F6D98B" stroke="none"/>
+      <path d="M 330,252.9 H 354 C 372,252.9 374,248 392,248 H 486 V 264 H 392 C 374,264 372,259.1 354,259.1 H 330 Z" fill="#F6D98B" stroke="none"/>
       <polyline points="453,223 486,256 453,289" stroke-linecap="round"/>
     </g>
   </g>
