@@ -7,10 +7,10 @@
   <!-- the arrow: a stem that goes straight on, and a branch curving off at 45 degrees up and one down; open heads, round ends -->
   <g fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
     <path d="M 302,256 H 486"/>
-    <path d="M 308,256 C 340,256 354,242 372,224 L 450,146"/>
-    <path d="M 308,256 C 340,256 354,270 372,288 L 450,366"/>
+    <path d="M 308,256 C 358,256 376,236 394,218 L 450,162"/>
+    <path d="M 308,256 C 358,256 376,276 394,294 L 450,350"/>
     <polyline points="456,226 486,256 456,286"/>
-    <polyline points="420,146 450,146 450,176"/>
-    <polyline points="420,366 450,366 450,336"/>
+    <polyline points="420,162 450,162 450,192"/>
+    <polyline points="420,350 450,350 450,320"/>
   </g>
 </svg>
