@@ -1,16 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Alt Courier: a teal envelope, and one white arrow that splits three ways, out to your alts. -->
+  <!-- Alt Courier: a stack of teal letters, like the game's mail, and one white arrow that splits three ways, out to your alts. -->
   <rect x="0" y="0" width="512" height="512" fill="#15202E"/>
-  <!-- the envelope: square-cornered outline and its flap -->
-  <rect x="36" y="164" width="252" height="184" fill="none" stroke="#5BE0C8" stroke-width="16"/>
-  <polyline points="36,164 162,266 288,164" fill="none" stroke="#5BE0C8" stroke-width="16" stroke-linejoin="miter"/>
+  <defs>
+    <!-- one letter: filled with the background so the ones behind it are hidden -->
+    <g id="letter" fill="#15202E" stroke="#5BE0C8" stroke-width="16" stroke-linejoin="round">
+      <rect x="44" y="184" width="222" height="150"/>
+      <polyline points="44,184 155,266 266,184" fill="none"/>
+    </g>
+  </defs>
+  <use href="#letter" transform="translate(-6,-26)"/>
+  <use href="#letter" transform="translate(6,0)"/>
+  <use href="#letter" transform="translate(0,26)"/>
   <!-- the arrow: a stem that goes straight on, and a branch curving off at 45 degrees up and one down; open heads, round ends -->
   <g fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 302,256 H 486"/>
-    <path d="M 308,256 C 358,256 376,236 394,218 L 450,162"/>
-    <path d="M 308,256 C 358,256 376,276 394,294 L 450,350"/>
+    <path d="M 286,256 H 486"/>
+    <path d="M 316,256 C 362,256 380,236 398,218 L 450,166"/>
+    <path d="M 316,256 C 362,256 380,276 398,294 L 450,346"/>
     <polyline points="456,226 486,256 456,286"/>
-    <polyline points="420,162 450,162 450,192"/>
-    <polyline points="420,350 450,350 450,320"/>
+    <polyline points="420,166 450,166 450,196"/>
+    <polyline points="420,346 450,346 450,316"/>
   </g>
 </svg>
