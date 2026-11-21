@@ -17,7 +17,8 @@
        start as a full line. Pink and teal curve off to 45 degrees up and down; yellow goes straight on.
        Open heads, round ends. -->
   <defs>
-    <clipPath id="stripe"><rect x="322" y="248" width="100" height="16" rx="8"/></clipPath>
+    <!-- the stripe: round at its start, cut straight where pink and teal have left it -->
+    <clipPath id="stripe"><path d="M 330,248 H 368 V 264 H 330 A 8 8 0 0 1 330,248 Z"/></clipPath>
   </defs>
   <g fill="none" stroke-width="16" stroke-linejoin="round">
     <!-- pink and teal, under the stripe: they come out from under it as they part -->
@@ -38,7 +39,7 @@
     <!-- yellow starts as a full line once the others have parted -->
     <g stroke="#F6D98B">
       <!-- grows from the stripe's thin yellow band to a full line, in a smooth S, not a square start -->
-      <path d="M 330,252.9 H 338 C 358,252.9 362,248 384,248 H 486 V 264 H 384 C 362,264 358,259.1 338,259.1 H 330 Z" fill="#F6D98B" stroke="none"/>
+      <path d="M 330,252.9 H 384 C 404,252.9 408,248 428,248 H 486 V 264 H 428 C 408,264 404,259.1 384,259.1 H 330 Z" fill="#F6D98B" stroke="none"/>
       <polyline points="463,233 486,256 463,279" stroke-linecap="round"/>
     </g>
   </g>
