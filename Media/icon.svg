@@ -12,28 +12,33 @@
   <use href="#letter" stroke="#F4A7B9" transform="translate(-6,-38)"/>
   <use href="#letter" stroke="#F6D98B" transform="translate(28,0)"/>
   <use href="#letter" stroke="#5BE0C8" transform="translate(-8,38)"/>
-  <!-- the arrow: set apart from the letters. One stripe, as thick as the other lines, made of the three colors;
-       then it parts: pink curves off at 45 degrees up, teal down, yellow goes straight on (drawn last, so it
-       covers the others where they part). Open heads, round ends. -->
-  <g fill="none" stroke-linejoin="round">
-    <g stroke-width="5.333">
-      <path d="M 322,250.667 H 346" stroke="#F4A7B9"/>
-      <path d="M 322,256 H 346" stroke="#F6D98B"/>
-      <path d="M 322,261.333 H 346" stroke="#5BE0C8"/>
+  <!-- the arrow, set apart from the letters. It starts as one stripe, as thick as the other lines, made of the three
+       colors, with a round end. The stripe goes on until pink and teal have parted from it; only then does yellow
+       start as a full line. Pink and teal curve off to 45 degrees up and down; yellow goes straight on.
+       Open heads, round ends. -->
+  <defs>
+    <clipPath id="stripe"><rect x="322" y="248" width="100" height="16" rx="8"/></clipPath>
+  </defs>
+  <g fill="none" stroke-width="16" stroke-linejoin="round">
+    <!-- pink and teal, under the stripe: they come out from under it as they part -->
+    <g stroke="#F4A7B9">
+      <path d="M 340,256 C 376,256 392,218 410,200 L 462,148"/>
+      <polyline points="416,148 462,148 462,194" stroke-linecap="round"/>
     </g>
-    <g stroke-width="16">
-      <g stroke="#F4A7B9">
-        <path d="M 346,256 C 372,256 384,220 398,206 L 450,154"/>
-        <polyline points="420,154 450,154 450,184" stroke-linecap="round"/>
-      </g>
-      <g stroke="#5BE0C8">
-        <path d="M 346,256 C 372,256 384,292 398,306 L 450,358"/>
-        <polyline points="420,358 450,358 450,328" stroke-linecap="round"/>
-      </g>
-      <g stroke="#F6D98B">
-        <path d="M 346,256 H 486"/>
-        <polyline points="456,226 486,256 456,286" stroke-linecap="round"/>
-      </g>
+    <g stroke="#5BE0C8">
+      <path d="M 340,256 C 376,256 392,294 410,312 L 462,364"/>
+      <polyline points="416,364 462,364 462,318" stroke-linecap="round"/>
+    </g>
+    <!-- the stripe -->
+    <g clip-path="url(#stripe)">
+      <path d="M 300,250.5 H 430" stroke="#F4A7B9" stroke-width="5.6"/>
+      <path d="M 300,261.5 H 430" stroke="#5BE0C8" stroke-width="5.6"/>
+      <path d="M 300,256 H 430" stroke="#F6D98B" stroke-width="6.2"/>
+    </g>
+    <!-- yellow starts as a full line once the others have parted -->
+    <g stroke="#F6D98B">
+      <path d="M 384,256 H 486"/>
+      <polyline points="453,223 486,256 453,289" stroke-linecap="round"/>
     </g>
   </g>
 </svg>
