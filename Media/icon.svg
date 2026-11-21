@@ -22,12 +22,12 @@
   <g fill="none" stroke-width="16" stroke-linejoin="round">
     <!-- pink and teal, under the stripe: they come out from under it as they part -->
     <g stroke="#F4A7B9">
-      <path d="M 340,256 C 376,256 392,218 410,200 L 462,148"/>
-      <polyline points="416,148 462,148 462,194" stroke-linecap="round"/>
+      <path d="M 332,256 C 380,256 406,224 430,200 L 474,156"/>
+      <polyline points="428,156 474,156 474,202" stroke-linecap="round"/>
     </g>
     <g stroke="#5BE0C8">
-      <path d="M 340,256 C 376,256 392,294 410,312 L 462,364"/>
-      <polyline points="416,364 462,364 462,318" stroke-linecap="round"/>
+      <path d="M 332,256 C 380,256 406,288 430,312 L 474,356"/>
+      <polyline points="428,356 474,356 474,310" stroke-linecap="round"/>
     </g>
     <!-- the stripe -->
     <g clip-path="url(#stripe)">
@@ -37,7 +37,7 @@
     </g>
     <!-- yellow starts as a full line once the others have parted -->
     <g stroke="#F6D98B">
-      <path d="M 384,256 H 486"/>
+      <path d="M 392,256 H 486"/>
       <polyline points="453,223 486,256 453,289" stroke-linecap="round"/>
     </g>
   </g>
