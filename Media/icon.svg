@@ -1,21 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Alt Courier: a teal envelope, three curved white arrows fanning out to your alts. -->
+  <!-- Alt Courier: a teal envelope, and one white arrow that splits three ways, out to your alts. -->
   <rect x="0" y="0" width="512" height="512" fill="#15202E"/>
   <!-- the envelope: square-cornered outline and its flap -->
-  <rect x="48" y="150" width="300" height="212" fill="none" stroke="#5BE0C8" stroke-width="22"/>
-  <polyline points="48,150 198,268 348,150" fill="none" stroke="#5BE0C8" stroke-width="22" stroke-linejoin="miter"/>
-  <g fill="none" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round">
-    <!-- up -->
-    <path d="M 352,236 Q 424,236 452,132"/>
-    <!-- straight on, with a little wave -->
-    <path d="M 352,262 C 396,262 404,290 450,290"/>
-    <!-- down -->
-    <path d="M 352,288 Q 424,288 452,392"/>
-  </g>
-  <!-- the arrowheads, each turned along its arrow's last stretch -->
-  <g fill="#FFFFFF">
-    <polygon points="0,0 -40,-26 -40,26" transform="translate(458,108) rotate(-75.5)"/>
-    <polygon points="0,0 -40,-26 -40,26" transform="translate(492,290)"/>
-    <polygon points="0,0 -40,-26 -40,26" transform="translate(458,416) rotate(75.5)"/>
+  <rect x="36" y="164" width="252" height="184" fill="none" stroke="#5BE0C8" stroke-width="22"/>
+  <polyline points="36,164 162,266 288,164" fill="none" stroke="#5BE0C8" stroke-width="22" stroke-linejoin="miter"/>
+  <!-- the arrow: a stem that goes straight on, and a branch curving up and one down; open heads, round ends -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 302,256 H 486"/>
+    <path d="M 350,256 C 392,256 410,234 410,190 V 108"/>
+    <path d="M 350,256 C 392,256 410,278 410,322 V 404"/>
+    <polyline points="456,226 486,256 456,286"/>
+    <polyline points="380,138 410,108 440,138"/>
+    <polyline points="380,374 410,404 440,374"/>
   </g>
 </svg>
