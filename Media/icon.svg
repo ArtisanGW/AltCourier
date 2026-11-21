@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <!-- Alt Courier: a stack of letters, like the game's mail, and one arrow that splits three ways, out to your alts.
-       Each letter and the arrow that leaves from it share a pastel color: pink on top, yellow, teal at the bottom. -->
+       Each letter and the arrow that leaves from it share a pastel color: pink on top, yellow, teal at the bottom. No white. -->
   <rect x="0" y="0" width="512" height="512" fill="#15202E"/>
   <defs>
     <!-- one letter: filled with the background so the ones behind it are hidden; its color is set where it is used -->
@@ -9,24 +9,23 @@
       <polyline points="44,184 155,266 266,184" fill="none"/>
     </g>
   </defs>
-  <use href="#letter" stroke="#F4A7B9" transform="translate(-6,-26)"/>
+  <use href="#letter" stroke="#F4A7B9" transform="translate(-6,-38)"/>
   <use href="#letter" stroke="#F6D98B" transform="translate(6,0)"/>
-  <use href="#letter" stroke="#5BE0C8" transform="translate(0,26)"/>
-  <!-- the arrow: a white stem, then a branch curving off at 45 degrees up and one down, and one straight on;
+  <use href="#letter" stroke="#5BE0C8" transform="translate(0,38)"/>
+  <!-- the arrow: a branch curving off at 45 degrees up and one down, and one straight on (drawn last, so its color shows on the shared stem);
        open heads, round ends -->
   <g fill="none" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 286,256 H 320" stroke="#FFFFFF"/>
-    <g stroke="#F4A7B9">
-      <path d="M 316,256 C 362,256 380,236 398,218 L 450,166"/>
+        <g stroke="#F4A7B9">
+      <path d="M 286,256 H 316 C 362,256 380,236 398,218 L 450,166"/>
       <polyline points="420,166 450,166 450,196"/>
     </g>
-    <g stroke="#F6D98B">
-      <path d="M 316,256 H 486"/>
-      <polyline points="456,226 486,256 456,286"/>
-    </g>
     <g stroke="#5BE0C8">
-      <path d="M 316,256 C 362,256 380,276 398,294 L 450,346"/>
+      <path d="M 286,256 H 316 C 362,256 380,276 398,294 L 450,346"/>
       <polyline points="420,346 450,346 450,316"/>
+    </g>
+    <g stroke="#F6D98B">
+      <path d="M 286,256 H 486"/>
+      <polyline points="456,226 486,256 456,286"/>
     </g>
   </g>
 </svg>
