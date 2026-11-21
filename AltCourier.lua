@@ -1,121 +1,43 @@
 -- Alt Courier
 -- A vanilla addon: it uses only the game, never another addon.
--- When you open the Send Mail tab, fills a mail with your crafting reagents
--- for the alt you picked, then pelts and Bind on Equip items for theirs. It
--- never presses Send itself: you check the mail and press Send. After each
--- send, the next batch is filled in, until nothing is left.
+-- A panel beside the mailbox lists your categories (a kind of item, and the alt
+-- who gets it). Nothing is attached until you press Start: then the mail is
+-- filled with the first batch, you check it and press Send, and the next batch
+-- follows, until nothing is left or you press Stop. It never presses Send itself.
+-- What each part does is in the other files: Rules (kinds of items), Categories,
+-- Characters (who can be mailed), Popup, Settings.
 
-local ADDON = ...
+local ADDON, addon = ...
 
 local MAX_ATTACH = ATTACHMENTS_MAX_SEND or 12
 local NUM_BAGS = NUM_BAG_SLOTS or 4
-local CLASS_TRADESKILL = (Enum and Enum.ItemClass and Enum.ItemClass.Tradegoods) or 7
-local SUBCLASS_LEATHER = 6 -- Trade Goods > Leather: leather, hides and pelts
-local BIND_ON_EQUIP = (Enum and Enum.ItemBind and Enum.ItemBind.OnEquip) or 2
 
-local GetItemInfoInstant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
 local GetItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 
--- Order matters: reagents go out first, then pelts, then Bind on Equip items.
-local GROUPS = {
-    { key = "reagents", label = "Reagents", subject = "Reagents" },
-    { key = "pelts",    label = "Pelts",    subject = "Pelts" },
-    { key = "boe",      label = "BoE",      subject = "Bind on Equip" },
-}
+local Characters, Categories, Rules
 
 local db
-local myKey, myName, myRealm, myFaction
-local connected = {}
 
 -- What this mailbox visit is doing.
 local state = {
-    owned = false,   -- the send form holds a batch we filled in
-    group = nil,     -- the group of that batch
-    skipped = {},    -- groups skipped until the mailbox closes
-    busy = false,    -- a fill is scheduled
-    open = false,    -- the mailbox is open
+    running = false,  -- the player pressed Start and the run isn't over
+    owned = false,    -- the send form holds a batch we filled in
+    batch = nil,      -- that batch: { target = key, items = {...}, rules = {...} }
+    skipped = {},     -- rule ids skipped until the mailbox closes
+    busy = false,     -- a fill is scheduled
+    open = false,     -- the mailbox is open
     floating = false, -- the game's mailbox is out of sight (another mail window covers it)
 }
 
 local panel -- built at login, as part of the mailbox
 local endVisit -- ends a mailbox visit (below)
 
-local function print_(msg)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff66bbffAlt Courier:|r " .. msg)
+function addon.Print(message)
+    DEFAULT_CHAT_FRAME:AddMessage("|cff66bbffAlt Courier:|r " .. message)
 end
 
----------------------------------------------------------------------------
--- Characters on this account
----------------------------------------------------------------------------
-
--- On this client characters have a first and a last name ("Reagents Artisan"),
--- and the mail To: field wants both, with a space and no realm.
-local function fullName(c)
-    if c.last and c.last ~= "" then return c.name .. " " .. c.last end
-    return c.name
-end
-
-local function keyOf(full, realm) return full .. "-" .. realm end
-
-local function coloredName(key)
-    local c = db.chars[key]
-    if not c then return "|cff888888None|r" end
-    local color = c.class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[c.class]
-    local label = fullName(c)
-    if color and color.colorStr then return "|c" .. color.colorStr .. label .. "|r" end
-    return label
-end
-
--- Can this character receive mail from the one logged in?
-local function canMail(key)
-    local c = key and db.chars[key]
-    if not c or key == myKey then return false end
-    if c.faction and myFaction and c.faction ~= myFaction then return false end
-    return c.realm == myRealm or connected[c.realm] == true
-end
-
-local function mailName(key)
-    local c = db.chars[key]
-    return fullName(db.chars[key])
-end
-
-local function mailableChars()
-    local list = {}
-    for key in pairs(db.chars) do
-        if canMail(key) then list[#list + 1] = key end
-    end
-    table.sort(list)
-    return list
-end
-
-local function rememberMe()
-    myName = UnitName("player")
-    myRealm = (GetNormalizedRealmName and GetNormalizedRealmName()) or GetRealmName():gsub("[%s%-]", "")
-    myFaction = UnitFactionGroup("player")
-    local last
-    if UnitFullName then
-        local first, second = UnitFullName("player")
-        if first == myName and type(second) == "string" and second ~= "" and second ~= myRealm then last = second end
-    end
-    local _, class = UnitClass("player")
-    local me = { name = myName, last = last, realm = myRealm, faction = myFaction, class = class }
-    myKey = keyOf(fullName(me), myRealm)
-    db.chars[myKey] = me
-
-    -- A key in the short form, "First-Realm": moved to this character's
-    -- full-name key, and any picker set to it with it.
-    local old = keyOf(myName, myRealm)
-    if old ~= myKey and db.chars[old] and not db.chars[old].last then
-        db.chars[old] = nil
-        for g, target in pairs(db.targets) do
-            if target == old then db.targets[g] = myKey end
-        end
-    end
-
-    wipe(connected)
-    if GetAutoCompleteRealms then
-        for _, realm in ipairs(GetAutoCompleteRealms() or {}) do connected[realm] = true end
-    end
+function addon.Refresh()
+    if panel then panel:Update() end
 end
 
 ---------------------------------------------------------------------------
@@ -138,37 +60,72 @@ local function isExcluded(itemID, name)
 end
 
 local function excludedCount()
-    local n = #db.exclude.words
-    for _ in pairs(db.exclude.items) do n = n + 1 end
-    return n
+    local count = #db.exclude.words
+    for _ in pairs(db.exclude.items) do count = count + 1 end
+    return count
 end
 
--- Which group a bag slot belongs to, or nil.
-local function groupOf(bag, slot)
-    local info = C_Container.GetContainerItemInfo(bag, slot)
-    if not info or not info.itemID or info.isBound or info.isLocked then return nil end
-    if isExcluded(info.itemID, nameOf(info.hyperlink)) then return nil end
-    -- Bind on Equip and not bound yet (bound items were skipped above).
-    if select(14, GetItemInfo(info.hyperlink or info.itemID)) == BIND_ON_EQUIP then return "boe" end
-    local _, _, _, _, _, classID, subclassID = GetItemInfoInstant(info.itemID)
-    if classID == CLASS_TRADESKILL then
-        return subclassID == SUBCLASS_LEATHER and "pelts" or "reagents"
-    end
-    -- Some crafting materials live outside Trade Goods; the item says so.
-    if select(17, GetItemInfo(info.itemID)) then return "reagents" end
-    return nil
-end
-
-local function itemsFor(groupKey)
-    local items = {}
+-- Every bag item a category takes: ordered categories, and the slots of each by rule id.
+local function scanBags()
+    local ordered = Categories.Ordered()
+    local slotsByRule = {}
     for bag = 0, NUM_BAGS do
         for slot = 1, C_Container.GetContainerNumSlots(bag) do
-            if groupOf(bag, slot) == groupKey then
-                items[#items + 1] = { bag = bag, slot = slot }
+            local info = C_Container.GetContainerItemInfo(bag, slot)
+            if info and info.itemID and not info.isBound and not info.isLocked
+                and not isExcluded(info.itemID, nameOf(info.hyperlink)) then
+                local category = Categories.Claim(ordered, Rules.Describe(info))
+                if category then
+                    slotsByRule[category.rule] = slotsByRule[category.rule] or {}
+                    table.insert(slotsByRule[category.rule], { bag = bag, slot = slot })
+                end
             end
         end
     end
-    return items
+    return ordered, slotsByRule
+end
+
+local function isSendable(category, slotsByRule, skipped)
+    return slotsByRule[category.rule] ~= nil and not skipped[category.rule] and Characters.CanMail(category.target)
+end
+
+-- The next mail: the first category with something to send and an alt to get it,
+-- plus every other category going to that same alt, so one bank alt gets one
+-- mail, not one per kind. nil when nothing is left.
+local function nextBatch()
+    local ordered, slotsByRule = scanBags()
+    for _, category in ipairs(ordered) do
+        if isSendable(category, slotsByRule, state.skipped) then
+            local batch = { target = category.target, items = {}, rules = {} }
+            for _, other in ipairs(ordered) do
+                if other.target == category.target and isSendable(other, slotsByRule, state.skipped) then
+                    batch.rules[#batch.rules + 1] = other.rule
+                    for _, item in ipairs(slotsByRule[other.rule]) do batch.items[#batch.items + 1] = item end
+                end
+            end
+            return batch
+        end
+    end
+end
+
+-- What is ready to go, said in a line: "14 items for Bob, 3 for Carol".
+local function readySummary()
+    local ordered, slotsByRule = scanBags()
+    local countByTarget, targets = {}, {}
+    for _, category in ipairs(ordered) do
+        if isSendable(category, slotsByRule, state.skipped) then
+            if not countByTarget[category.target] then
+                countByTarget[category.target] = 0
+                targets[#targets + 1] = category.target
+            end
+            countByTarget[category.target] = countByTarget[category.target] + #slotsByRule[category.rule]
+        end
+    end
+    local parts = {}
+    for _, target in ipairs(targets) do
+        parts[#parts + 1] = ("%d for %s"):format(countByTarget[target], Characters.ColoredName(target))
+    end
+    return table.concat(parts, ", ")
 end
 
 ---------------------------------------------------------------------------
@@ -178,8 +135,7 @@ end
 -- The addon never switches tabs or shows the game's windows itself. When it
 -- opened the Send Mail tab through the game's tab function, closing the game
 -- menu later failed a protected controller call (SetPreferredGamepadInteractTarget)
--- and the game blamed this addon. So the player opens the Send Mail tab,
--- and the mail is filled when it shows.
+-- and the game blamed this addon. So the player opens the Send Mail tab.
 -- When another mail window covers the game's (another addon's), there is
 -- no Send Mail tab to wait for: attachments go in through the game's send
 -- functions at once, and that window shows them.
@@ -187,114 +143,200 @@ local function sendTabOpen()
     return state.floating or (SendMailFrame and SendMailFrame:IsShown())
 end
 
+-- Is the send form holding something the player put there?
+local function sendFormInUse()
+    for index = 1, MAX_ATTACH do
+        if HasSendMailItem(index) then return true end
+    end
+    return not state.floating and SendMailNameEditBox and (SendMailNameEditBox:GetText() or "") ~= ""
+end
+
 local function clearOurAttachments()
     if not state.owned then return end
-    for i = 1, MAX_ATTACH do
-        if HasSendMailItem(i) then
-            ClickSendMailItemButton(i, true)
+    for index = 1, MAX_ATTACH do
+        if HasSendMailItem(index) then
+            ClickSendMailItemButton(index, true)
             if CursorHasItem() then ClearCursor() end
         end
     end
-    state.owned, state.group = false, nil
+    state.owned, state.batch = false, nil
 end
 
 local function setStatus(text)
     if panel then panel.status:SetText(text) end
 end
 
-local function fill()
-    state.busy = false
-    if not state.open then return end
-    if CursorHasItem() then ClearCursor() end
-
-    for _, g in ipairs(GROUPS) do
-        local target = db.targets[g.key]
-        if not state.skipped[g.key] and canMail(target) then
-            local items = itemsFor(g.key)
-            if #items > 0 and not sendTabOpen() then
-                setStatus(("%d %s item%s ready for %s.\nOpen the |cffffd100Send Mail|r tab to fill the mail.")
-                    :format(#items, g.label, #items == 1 and "" or "s", coloredName(target)))
-                return
-            end
-            if #items > 0 then
-                local attached, slot = 0, 1
-                for _, it in ipairs(items) do
-                    while slot <= MAX_ATTACH and HasSendMailItem(slot) do slot = slot + 1 end
-                    if slot > MAX_ATTACH then break end
-                    C_Container.PickupContainerItem(it.bag, it.slot)
-                    ClickSendMailItemButton(slot)
-                    if CursorHasItem() then -- the game refused it
-                        ClearCursor()
-                    else
-                        attached = attached + 1
-                        slot = slot + 1
-                    end
-                end
-                if attached > 0 then
-                    SendMailNameEditBox:SetText(mailName(target))
-                    SendMailSubjectEditBox:SetText(g.subject)
-                    state.owned, state.group = true, g
-                    local left = #items - attached
-                    local more = left > 0 and (", " .. left .. " more after this") or ""
-                    local s = attached == 1 and "" or "s"
-                    if state.floating then
-                        -- That window has its own To: field, out of this addon's reach.
-                        setStatus(("%s for %s: %d item%s attached%s.\nType |cffffd100%s|r in To:, then press Send.")
-                            :format(g.label, coloredName(target), attached, s, more, mailName(target)))
-                    else
-                        setStatus(("%s for %s: %d item%s attached%s.\nPress |cffffd100Send|r. Alt-click an item to never send it.")
-                            :format(g.label, coloredName(target), attached, s, more))
-                    end
-                    return
-                end
-            end
-        end
-    end
-
-    if not next(db.targets) then
-        setStatus("Pick who gets your reagents, pelts and BoE items.")
+-- What the panel says when nothing is being sent.
+local function showIdle()
+    if not panel then return end
+    local summary = readySummary()
+    if summary ~= "" then
+        setStatus("Ready: " .. summary .. ".\nPress |cffffd100Start|r when you want to send.")
+    elseif #db.categories == 0 then
+        setStatus("Add a kind of item to send.")
     else
-        setStatus("Nothing left to send.")
+        setStatus("Nothing to send yet.\nPick who gets each kind of item.")
     end
 end
 
+local function finishRun(message)
+    state.running, state.owned, state.batch = false, false, nil
+    setStatus(message)
+    addon.Refresh()
+end
+
+local function rulesLabel(batch)
+    if #batch.rules == 1 then return Rules.byId[batch.rules[1]].label end
+    return "Items"
+end
+
+local function fill()
+    state.busy = false
+    if not (state.open and state.running) then return end
+    if CursorHasItem() then ClearCursor() end
+
+    local batch = nextBatch()
+    if not batch then return finishRun("Done: nothing left to send.") end
+    if not sendTabOpen() then
+        setStatus("Open the |cffffd100Send Mail|r tab to go on.")
+        return
+    end
+
+    local attached, slot = 0, 1
+    for _, item in ipairs(batch.items) do
+        while slot <= MAX_ATTACH and HasSendMailItem(slot) do slot = slot + 1 end
+        if slot > MAX_ATTACH then break end
+        C_Container.PickupContainerItem(item.bag, item.slot)
+        ClickSendMailItemButton(slot)
+        if CursorHasItem() then -- the game refused it
+            ClearCursor()
+        else
+            attached = attached + 1
+            slot = slot + 1
+        end
+    end
+    if attached == 0 then
+        -- The game took none of them: leave these kinds out and try the next.
+        for _, ruleId in ipairs(batch.rules) do state.skipped[ruleId] = true end
+        return fill()
+    end
+
+    local subject = #batch.rules == 1 and Rules.byId[batch.rules[1]].subject or "Items"
+    local mailName = Characters.MailName(batch.target)
+    SendMailNameEditBox:SetText(mailName)
+    SendMailSubjectEditBox:SetText(subject)
+    state.owned, state.batch = true, batch
+    local more = #batch.items - attached
+    local moreText = more > 0 and (", " .. more .. " more after this") or ""
+    local plural = attached == 1 and "" or "s"
+    if state.floating then
+        -- That window has its own To: field, out of this addon's reach.
+        setStatus(("%s for %s: %d item%s attached%s.\nType |cffffd100%s|r in To:, then press Send.")
+            :format(rulesLabel(batch), Characters.ColoredName(batch.target), attached, plural, moreText, mailName))
+    else
+        setStatus(("%s for %s: %d item%s attached%s.\nPress |cffffd100Send|r. Alt-click an item to never send it.")
+            :format(rulesLabel(batch), Characters.ColoredName(batch.target), attached, plural, moreText))
+    end
+    addon.Refresh()
+end
+
 -- Clear what we put in, then fill again a moment later (the game needs a
--- frame or two to hand cleared attachments back to the bags).
+-- frame or two to hand cleared attachments back to the bags). Only during a run.
 local function refill(delay)
+    if not state.running then
+        showIdle()
+        return
+    end
     clearOurAttachments()
     if state.busy then return end
     state.busy = true
     C_Timer.After(delay or 0.2, fill)
 end
 
+local function startRun()
+    if not state.open then return end
+    if not sendTabOpen() then
+        setStatus("Open the |cffffd100Send Mail|r tab first, then press Start.")
+        return
+    end
+    if sendFormInUse() then
+        setStatus("The mail already has something in it.\nSend it or clear it, then press Start.")
+        return
+    end
+    wipe(state.skipped)
+    state.running = true
+    addon.Refresh()
+    refill(0)
+end
+
+local function stopRun()
+    clearOurAttachments()
+    state.running = false
+    showIdle()
+    addon.Refresh()
+end
+
+-- The player typed in the mail we filled: it's theirs now. Nothing more is
+-- filled, and what's attached stays where it is.
+local function playerTookOver()
+    if not (state.running and state.owned) then return end
+    state.running, state.owned, state.batch = false, false, nil
+    setStatus("You changed the mail, so Alt Courier stopped.\nThe mail is yours to send.")
+    addon.Refresh()
+end
+
 ---------------------------------------------------------------------------
 -- Panel beside the mailbox
 ---------------------------------------------------------------------------
 
--- The look: the game's own templates.
+local PANEL_WIDTH, ROW_HEIGHT, TOP_SPACE, STATUS_HEIGHT = 260, 26, 34, 64
+
+-- The look: the game's own window pieces, as its Settings window is built
+-- (flat panel background, a NineSlice border in the ButtonFrameTemplateNoPortrait
+-- layout, a GameFontNormal title, an inset for text).
 local Look = {}
 
-local DIALOG_BACKDROP = {
-    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-    edgeSize = 16, insets = { left = 4, right = 4, top = 4, bottom = 4 },
-}
-
-function Look.Shell(f)
-    f:SetBackdrop(DIALOG_BACKDROP)
+function Look.Shell(frame, titleText)
+    frame.Bg = CreateFrame("Frame", nil, frame, "FlatPanelBackgroundTemplate")
+    frame.Bg:SetFrameLevel(frame:GetFrameLevel())
+    frame.Bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 7, -18)
+    frame.Bg:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -3, 3)
+    frame.NineSlice = CreateFrame("Frame", nil, frame, "NineSlicePanelTemplate")
+    frame.NineSlice:SetAllPoints()
+    if type(NineSliceUtil) == "table" and type(NineSliceUtil.ApplyLayoutByName) == "function" then
+        NineSliceUtil.ApplyLayoutByName(frame.NineSlice, "ButtonFrameTemplateNoPortrait")
+    end
+    frame.title = frame.NineSlice:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    frame.title:SetPoint("TOP", frame, "TOP", 0, -5)
+    frame.title:SetText(titleText)
 end
 
-function Look.Text(parent, size)
-    return parent:CreateFontString(nil, "OVERLAY", size == "head" and "GameFontNormal" or "GameFontHighlightSmall")
+function Look.Text(parent)
+    return parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 end
 
--- A button whose words can change: b.Label(text).
+-- A game button whose words can change: button.Label(text).
 function Look.Button(parent, text, width, height)
-    local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    function b.Label(words) b:SetText(words) end
-    b:SetSize(width, height)
-    b.Label(text)
-    return b
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    function button.Label(words) button:SetText(words) end
+    button:SetSize(width, height)
+    button.Label(text)
+    return button
+end
+
+-- A tooltip in the game's style: a short sentence, a blank line, then the details.
+-- text can be a function, for words that change.
+function Look.Tooltip(frame, text)
+    frame:HookScript("OnEnter", function(self)
+        local words = type(text) == "function" and text() or text
+        if not words then return end
+        local title, details = words:match("^(.-)\n\n(.*)$")
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(title or words, 1, 1, 1, 1, true)
+        if details then GameTooltip:AddLine(details, nil, nil, nil, true) end
+        GameTooltip:Show()
+    end)
+    frame:HookScript("OnLeave", GameTooltip_Hide)
 end
 
 local picker
@@ -317,17 +359,17 @@ local function openList(owner, id, entries)
     if picker:IsShown() and picker.id == id then picker:Hide() return end
     picker.id = id
 
-    for i, entry in ipairs(entries) do
-        local row = picker.rows[i]
+    for index, entry in ipairs(entries) do
+        local row = picker.rows[index]
         if not row then
             row = CreateFrame("Button", nil, picker)
             row:SetHeight(18)
-            row:SetPoint("TOPLEFT", 6, -6 - (i - 1) * 18)
+            row:SetPoint("TOPLEFT", 6, -6 - (index - 1) * 18)
             row:SetPoint("RIGHT", -6, 0)
             row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
             row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             row.text:SetPoint("LEFT", 4, 0)
-            picker.rows[i] = row
+            picker.rows[index] = row
         end
         row.text:SetText(entry.text)
         row:SetScript("OnClick", function()
@@ -336,7 +378,7 @@ local function openList(owner, id, entries)
         end)
         row:Show()
     end
-    for i = #entries + 1, #picker.rows do picker.rows[i]:Hide() end
+    for index = #entries + 1, #picker.rows do picker.rows[index]:Hide() end
 
     picker:SetSize(math.max(owner:GetWidth(), 150), 12 + #entries * 18)
     picker:ClearAllPoints()
@@ -344,53 +386,63 @@ local function openList(owner, id, entries)
     picker:Show()
 end
 
-local function openPicker(owner, groupKey)
-    local entries = { { text = "|cff888888None|r", onClick = function()
-        db.targets[groupKey] = nil
+local function openRecipientList(owner, category)
+    local function choose(key)
+        category.target = key
         panel:Update()
         refill()
-    end } }
-    for _, key in ipairs(mailableChars()) do
-        entries[#entries + 1] = { text = coloredName(key), onClick = function()
-            db.targets[groupKey] = key
+    end
+    local entries = { { text = "|cff888888None|r", onClick = function() choose(nil) end } }
+    for _, key in ipairs(Characters.Mailable()) do
+        entries[#entries + 1] = { text = Characters.ColoredName(key), onClick = function() choose(key) end }
+    end
+    openList(owner, category.rule, entries)
+    if #entries == 1 then
+        addon.Print("No alts known yet. Log into each alt once with Alt Courier on, or use /ac add First Last.")
+    end
+end
+
+local function openAddCategoryList(owner)
+    local entries = {}
+    for _, rule in ipairs(Categories.Unused()) do
+        entries[#entries + 1] = { text = rule.label, onClick = function()
+            Categories.Add(rule.id)
             panel:Update()
             refill()
         end }
     end
-    openList(owner, groupKey, entries)
-    if #entries == 1 then
-        print_("No alts known yet. Log into each alt once with Alt Courier on, or use /ac add First Last.")
-    end
+    if #entries == 0 then entries[1] = { text = "|cff888888All added|r" } end
+    openList(owner, "add", entries)
 end
 
 local function excludeItem(itemID, name)
     if not itemID then return end
     db.exclude.items[itemID] = name or db.exclude.items[itemID] or ("item " .. itemID)
-    print_("Won't send " .. db.exclude.items[itemID] .. " any more. /ac excluded to undo.")
-    if panel then panel:Update() end
+    addon.Print("Won't send " .. db.exclude.items[itemID] .. " any more. /ac excluded to undo.")
+    addon.Refresh()
 end
 
 local function excludeWord(word)
     word = word:lower()
-    for _, w in ipairs(db.exclude.words) do if w == word then return end end
+    for _, existing in ipairs(db.exclude.words) do if existing == word then return end end
     table.insert(db.exclude.words, word)
-    print_("Won't send items with \"" .. word .. "\" in their name.")
-    if panel then panel:Update() end
+    addon.Print("Won't send items with \"" .. word .. "\" in their name.")
+    addon.Refresh()
 end
 
 local function openExcluded(owner)
     local entries = {}
     for _, word in ipairs(db.exclude.words) do
         entries[#entries + 1] = { text = "Name has \"" .. word .. "\"  |cffff5555x|r", onClick = function()
-            for i, w in ipairs(db.exclude.words) do
-                if w == word then table.remove(db.exclude.words, i) break end
+            for index, existing in ipairs(db.exclude.words) do
+                if existing == word then table.remove(db.exclude.words, index) break end
             end
             panel:Update(); refill()
         end }
     end
     local ids = {}
     for itemID in pairs(db.exclude.items) do ids[#ids + 1] = itemID end
-    table.sort(ids, function(a, b) return db.exclude.items[a] < db.exclude.items[b] end)
+    table.sort(ids, function(first, second) return db.exclude.items[first] < db.exclude.items[second] end)
     for _, itemID in ipairs(ids) do
         entries[#entries + 1] = { text = db.exclude.items[itemID] .. "  |cffff5555x|r", onClick = function()
             db.exclude.items[itemID] = nil
@@ -405,22 +457,22 @@ end
 
 -- Alt-click an attachment on the send form: take it out and never send it again.
 local function hookAttachments()
-    for i = 1, MAX_ATTACH do
-        local button = _G["SendMailAttachment" .. i]
+    for index = 1, MAX_ATTACH do
+        local button = _G["SendMailAttachment" .. index]
         if button then
             button:HookScript("PreClick", function(self)
-                self.rpExclude = IsAltKeyDown() and HasSendMailItem(i) and GetSendMailItemLink(i) or nil
+                self.altCourierExclude = IsAltKeyDown() and HasSendMailItem(index) and GetSendMailItemLink(index) or nil
             end)
             button:HookScript("PostClick", function(self)
-                local link = self.rpExclude
+                local link = self.altCourierExclude
                 if not link then return end
-                self.rpExclude = nil
+                self.altCourierExclude = nil
                 if CursorHasItem() then ClearCursor() end -- the click picked it up; back to the bags
                 excludeItem(itemIDOf(link), nameOf(link))
                 refill()
             end)
             button:HookScript("OnEnter", function()
-                if GameTooltip:IsOwned(button) and HasSendMailItem(i) then
+                if GameTooltip:IsOwned(button) and HasSendMailItem(index) then
                     GameTooltip:AddLine("Alt-click: never send this (Alt Courier)", 0.4, 0.73, 1)
                     GameTooltip:Show()
                 end
@@ -429,79 +481,130 @@ local function hookAttachments()
     end
 end
 
-local function buildPanel()
-    panel = CreateFrame("Frame", "AltCourierPanel", MailFrame, "BackdropTemplate")
-    panel:SetSize(220, 200 + (#GROUPS - 2) * 28)
-    panel:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", 4, 0)
-    Look.Shell(panel)
+-- One category's row: what it takes, who gets it, and a button to remove it.
+local function buildRow(row)
+    row:SetSize(PANEL_WIDTH, ROW_HEIGHT)
+    row.label = Look.Text(row)
+    row.label:SetPoint("LEFT", 14, 0)
+    row.label:SetWidth(96)
+    row.label:SetJustifyH("LEFT")
+    -- The label's tooltip says what the kind takes.
+    row.info = CreateFrame("Button", nil, row)
+    row.info:SetAllPoints(row.label)
+    Look.Tooltip(row.info, function()
+        local rule = Rules.byId[row.rule]
+        return rule and (rule.label .. "\n\n" .. rule.detail .. "\n\nWith no one picked, these items stay in your bags.")
+    end)
 
-    local title = Look.Text(panel, "head")
-    title:SetPoint("TOP", 0, -12)
-    title:SetText("Alt Courier")
+    row.pick = Look.Button(row, "", 100, 22)
+    row.pick:SetPoint("LEFT", 116, 0)
+    row.pick:SetScript("OnClick", function(self) openRecipientList(self, Categories.Find(row.rule)) end)
 
-    -- Hides the panel until the mailbox opens again.
-    local function dismiss()
+    row.remove = CreateFrame("Button", nil, row, "UIPanelCloseButton")
+    row.remove:SetSize(24, 24)
+    row.remove:SetPoint("RIGHT", -8, 0)
+    row.remove:SetScript("OnClick", function()
         closePicker()
-        panel:Hide()
-    end
-    local close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", -2, -2)
-    close:SetScript("OnClick", dismiss)
-
-    panel.pick = {}
-    for i, g in ipairs(GROUPS) do
-        local label = Look.Text(panel, "small")
-        label:SetPoint("TOPLEFT", 14, -36 - (i - 1) * 28)
-        label:SetText(g.label .. " to:")
-
-        local btn = Look.Button(panel, "", 122, 22)
-        btn:SetPoint("TOPRIGHT", -12, -31 - (i - 1) * 28)
-        btn:SetScript("OnClick", function(self) openPicker(self, g.key) end)
-        panel.pick[g.key] = btn
-    end
-
-    panel.status = Look.Text(panel, "small")
-    panel.status:SetPoint("TOPLEFT", 14, -38 - #GROUPS * 28)
-    panel.status:SetPoint("RIGHT", -14, 0)
-    panel.status:SetJustifyH("LEFT")
-    panel.status:SetJustifyV("TOP")
-    panel.status:SetHeight(40)
-
-    local excluded = Look.Button(panel, "", 196, 22)
-    excluded:SetPoint("BOTTOMLEFT", 12, 38)
-    excluded:SetPoint("BOTTOMRIGHT", -12, 38)
-    excluded:SetScript("OnClick", function(self) openExcluded(self) end)
-    panel.excluded = excluded
-
-    local again = Look.Button(panel, "Fill again", 94, 22)
-    again:SetPoint("BOTTOMLEFT", 12, 12)
-    again:SetScript("OnClick", function() closePicker(); refill() end)
-
-    local skip = Look.Button(panel, "Skip", 94, 22)
-    skip:SetPoint("BOTTOMRIGHT", -12, 12)
-    skip:SetScript("OnClick", function()
-        closePicker()
-        if state.group then state.skipped[state.group.key] = true end
+        Categories.Remove(row.rule)
+        panel:Update()
         refill()
     end)
-    skip.tooltip = "Leave this kind of item in your bags until the mailbox closes."
-    skip:HookScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(self.tooltip, nil, nil, nil, nil, true)
-        GameTooltip:Show()
-    end)
-    skip:HookScript("OnLeave", GameTooltip_Hide)
+    Look.Tooltip(row.remove, "Stops sending this kind.\n\nIts items stay in your bags.")
+end
 
-    function panel:Update()
-        for key, btn in pairs(self.pick) do
-            local target = db.targets[key]
-            if target and not canMail(target) and db.chars[target] then
-                btn.Label("|cffff5555" .. fullName(db.chars[target]) .. "|r")
-            else
-                btn.Label(coloredName(target))
-            end
+local function buildPanel()
+    panel = CreateFrame("Frame", "AltCourierPanel", MailFrame)
+    panel:SetWidth(PANEL_WIDTH)
+    panel:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", 4, 0)
+    Look.Shell(panel, "Alt Courier")
+
+    -- Hides the panel until the mailbox opens again.
+    local close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", 2, 2)
+    close:SetScript("OnClick", function()
+        closePicker()
+        panel:Hide()
+    end)
+
+    -- Rows come and go as categories are added and removed: a pool.
+    panel.rows = CreateFramePool("Frame", panel)
+
+    panel.add = Look.Button(panel, "Add a category", PANEL_WIDTH - 24, 22)
+    panel.add:SetScript("OnClick", function(self) openAddCategoryList(self) end)
+    Look.Tooltip(panel.add, "Adds a kind of item to send.\n\nYou can add and remove them any time.")
+
+    panel.statusBox = CreateFrame("Frame", nil, panel, "InsetFrameTemplate")
+    panel.statusBox:SetSize(PANEL_WIDTH - 24, STATUS_HEIGHT)
+    panel.status = Look.Text(panel.statusBox)
+    panel.status:SetPoint("TOPLEFT", 8, -8)
+    panel.status:SetPoint("BOTTOMRIGHT", -8, 8)
+    panel.status:SetJustifyH("LEFT")
+    panel.status:SetJustifyV("TOP")
+
+    panel.excluded = Look.Button(panel, "", 114, 22)
+    panel.excluded:SetScript("OnClick", function(self) openExcluded(self) end)
+    Look.Tooltip(panel.excluded, "Items Alt Courier never sends.\n\nAlt-click an attached item to add one.")
+
+    panel.settings = Look.Button(panel, "Settings", 114, 22)
+    panel.settings:SetScript("OnClick", function() closePicker(); addon.OpenSettings() end)
+    Look.Tooltip(panel.settings, "Opens Alt Courier's settings.\n\nThe place to turn on mailing your other accounts.")
+
+    panel.start = Look.Button(panel, "Start", 114, 24)
+    panel.start:SetScript("OnClick", function()
+        closePicker()
+        if state.running then stopRun() else startRun() end
+    end)
+    Look.Tooltip(panel.start, function()
+        if state.running then return "Stops, and takes our items out of the mail.\n\nWhat you already sent stays sent." end
+        return "Fills the mail with the next batch.\n\nNothing is attached until you press it. You check the mail and press Send."
+    end)
+
+    panel.skip = Look.Button(panel, "Skip", 114, 24)
+    panel.skip:SetScript("OnClick", function()
+        closePicker()
+        if state.batch then
+            for _, ruleId in ipairs(state.batch.rules) do state.skipped[ruleId] = true end
         end
+        refill()
+    end)
+    Look.Tooltip(panel.skip, "Leaves this batch in your bags until the mailbox closes.")
+
+    -- Rows from the saved categories, and everything under them in place.
+    function panel:Update()
+        self.rows:ReleaseAll()
+        local ordered = Categories.Ordered()
+        for index, category in ipairs(ordered) do
+            local row = self.rows:Acquire()
+            if not row.label then buildRow(row) end
+            row.rule = category.rule
+            row.label:SetText(Rules.byId[category.rule].label)
+            local target = category.target
+            if target and not Characters.CanMail(target) and db.chars[target] then
+                row.pick.Label("|cffff5555" .. Characters.FullName(db.chars[target]) .. "|r")
+            else
+                row.pick.Label(Characters.ColoredName(target))
+            end
+            row:ClearAllPoints()
+            row:SetPoint("TOPLEFT", self, "TOPLEFT", 0, -(TOP_SPACE + (index - 1) * ROW_HEIGHT))
+            row:Show()
+        end
+
+        local y = TOP_SPACE + #ordered * ROW_HEIGHT
+        local function place(widget, left, top)
+            widget:ClearAllPoints()
+            widget:SetPoint("TOPLEFT", self, "TOPLEFT", left, -top)
+        end
+        place(self.add, 12, y + 4)
+        place(self.statusBox, 12, y + 34)
+        place(self.excluded, 12, y + 34 + STATUS_HEIGHT + 6)
+        place(self.settings, PANEL_WIDTH - 12 - 114, y + 34 + STATUS_HEIGHT + 6)
+        place(self.start, 12, y + 34 + STATUS_HEIGHT + 34)
+        place(self.skip, PANEL_WIDTH - 12 - 114, y + 34 + STATUS_HEIGHT + 34)
+        self:SetHeight(y + 34 + STATUS_HEIGHT + 34 + 24 + 14)
+
         self.excluded.Label(("Never sent (%d)"):format(excludedCount()))
+        self.start.Label(state.running and "Stop" or "Start")
+        self.skip:SetEnabled(state.owned == true)
     end
 
     -- Dragged by its top when it floats on its own; the spot is kept.
@@ -513,19 +616,27 @@ local function buildPanel()
     panel:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         if not state.floating then return end
-        local point, _, relPoint, x, y = self:GetPoint(1)
-        db.floatAt = { point, relPoint, x, y }
+        local point, _, relativePoint, x, y = self:GetPoint(1)
+        db.floatAt = { point, relativePoint, x, y }
     end)
 
     hookAttachments()
 
     panel:SetScript("OnHide", closePicker)
     -- The panel is a child of the mailbox, so it shows and hides with it; the
-    -- addon never calls Show on the game's windows. Opening the Send Mail tab fills the mail.
+    -- addon never calls Show on the game's windows. If the Send Mail tab is
+    -- left and opened again during a run, the run goes on.
     if SendMailFrame then
-        SendMailFrame:HookScript("OnShow", function() if not state.owned then refill(0.1) end end)
+        SendMailFrame:HookScript("OnShow", function()
+            if state.running and not state.owned then refill(0.1) end
+        end)
     end
-
+    -- Typing in the mail we filled takes it from us (set by us, it isn't "user input").
+    for _, editBox in ipairs({ SendMailNameEditBox, SendMailSubjectEditBox }) do
+        editBox:HookScript("OnTextChanged", function(_, userInput)
+            if userInput then playerTookOver() end
+        end)
+    end
 end
 
 -- Is the game's own mailbox on screen? Another addon's mail window may keep it open out of sight: under a hidden frame, see-through
@@ -533,22 +644,20 @@ end
 local function gameMailboxOnScreen()
     if not (MailFrame and MailFrame:IsVisible()) then return false end
     if (MailFrame:GetEffectiveAlpha() or 1) < 0.05 then return false end
-    local l, r, b, t = MailFrame:GetLeft(), MailFrame:GetRight(), MailFrame:GetBottom(), MailFrame:GetTop()
-    if not (l and r and b and t) then return false end
-    local k = MailFrame:GetEffectiveScale() / UIParent:GetEffectiveScale()
-    l, r, b, t = l * k, r * k, b * k, t * k
-    return r > 0 and t > 0 and l < UIParent:GetWidth() and b < UIParent:GetHeight()
+    local left, right, bottom, top = MailFrame:GetLeft(), MailFrame:GetRight(), MailFrame:GetBottom(), MailFrame:GetTop()
+    if not (left and right and bottom and top) then return false end
+    local scale = MailFrame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    left, right, bottom, top = left * scale, right * scale, bottom * scale, top * scale
+    return right > 0 and top > 0 and left < UIParent:GetWidth() and bottom < UIParent:GetHeight()
 end
 
--- Beside the game's mailbox, or on its own (shown and hidden by the addon,
--- since it is the addon's own frame) when that mailbox is out of sight.
 -- The mailbox visit is over: the game said so (MAIL_CLOSED), or the game's
 -- mailbox went away while the panel floated. Under another mail window the
 -- game's mailbox may get no OnHide, and MAIL_CLOSED can wait until you walk
 -- away, so the floating panel watches it too.
 endVisit = function()
     state.open = false
-    state.owned, state.group = false, nil
+    state.running, state.owned, state.batch = false, false, nil
     wipe(state.skipped)
     closePicker()
     if panel then
@@ -565,6 +674,8 @@ local function watchMailbox(_, elapsed)
     if not (MailFrame and MailFrame:IsShown()) then endVisit() end
 end
 
+-- Beside the game's mailbox, or on its own (shown and hidden by the addon,
+-- since it is the addon's own frame) when that mailbox is out of sight.
 local function placePanel()
     state.floating = not gameMailboxOnScreen()
     panel:ClearAllPoints()
@@ -597,33 +708,37 @@ events:RegisterEvent("PLAYER_LOGIN")
 events:RegisterEvent("MAIL_SHOW")
 events:RegisterEvent("MAIL_CLOSED")
 events:RegisterEvent("MAIL_SEND_SUCCESS")
+events:RegisterEvent("BAG_UPDATE_DELAYED")
 
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" and arg1 == ADDON then
+        Characters, Categories, Rules = addon.Characters, addon.Categories, addon.Rules
         AltCourierDB = AltCourierDB or {}
         db = AltCourierDB
+        addon.db = db
         db.chars = db.chars or {}
-        db.targets = db.targets or {}
         db.exclude = db.exclude or {}
         db.exclude.items = db.exclude.items or {}
         db.exclude.words = db.exclude.words or {}
+        db.crossAccount = db.crossAccount == true   -- off until the player agrees (Settings.lua)
+        Categories.Load()
     elseif event == "PLAYER_LOGIN" then
-        rememberMe()
+        Characters.RememberMe()
         if MailFrame and not panel then buildPanel() end
+        addon.RegisterSettings()
     elseif event == "MAIL_SHOW" then
         if not panel then return end
         state.open = true
+        state.running, state.owned, state.batch = false, false, nil
         wipe(state.skipped)
-        state.owned, state.group = false, nil
         setStatus("")
         -- A moment later, so a mail window that covers the game's has done so.
-        -- Then: says what's ready, and fills once the Send Mail tab is open
-        -- (at once when the panel floats).
+        -- Then it says what's ready; nothing is attached until Start.
         C_Timer.After(0.2, function()
             if not state.open then return end
             placePanel()
             panel:Update()
-            refill(0)
+            showIdle()
         end)
     elseif event == "MAIL_CLOSED" then
         endVisit()
@@ -631,9 +746,12 @@ events:SetScript("OnEvent", function(_, event, arg1)
         if state.owned then
             -- The game already emptied the form; fill the next batch once the
             -- sent items have left the bags.
-            state.owned, state.group = false, nil
+            state.owned, state.batch = false, nil
+            addon.Refresh()
             refill(0.5)
         end
+    elseif event == "BAG_UPDATE_DELAYED" then
+        if state.open and not state.running and panel and panel:IsShown() then showIdle() end
     end
 end)
 
@@ -643,70 +761,58 @@ end)
 
 SLASH_ALTCOURIER1 = "/altcourier"
 SLASH_ALTCOURIER2 = "/ac"
-SlashCmdList.ALTCOURIER = function(msg)
-    local cmd, rest = (msg or ""):match("^%s*(%S*)%s*(.-)%s*$")
-    cmd = cmd:lower()
-    if cmd == "add" and rest ~= "" then
-        local typed, realm = rest:match("^([^%-]+)%-?(.*)$")
-        local words = {}
-        for w in typed:gmatch("%S+") do words[#words + 1] = w:sub(1, 1):upper() .. w:sub(2):lower() end
-        local name, last = words[1], words[2]
-        realm = realm ~= "" and realm or myRealm
-        local c = { name = name, last = last, realm = realm, faction = myFaction }
-        local key = keyOf(fullName(c), realm)
-        db.chars[key] = db.chars[key] or c
-        print_("Added " .. coloredName(key) .. ".")
-    elseif cmd == "remove" and rest ~= "" then
-        local found
-        for key, c in pairs(db.chars) do
-            if key:lower() == rest:lower() or (fullName(c):lower() == rest:lower() and c.realm == myRealm) then
-                found = key
-            end
+SlashCmdList.ALTCOURIER = function(message)
+    local command, rest = (message or ""):match("^%s*(%S*)%s*(.-)%s*$")
+    command = command:lower()
+    if command == "add" and rest ~= "" then
+        local key = Characters.Add(rest, false)
+        if key then addon.Print("Added " .. Characters.ColoredName(key) .. ".") end
+    elseif command == "remove" and rest ~= "" then
+        if Characters.Remove(rest) then
+            addon.Print("Removed " .. rest .. ".")
+        else
+            addon.Print("No such alt: " .. rest)
         end
-        if not found or found == myKey then print_("No such alt: " .. rest) return end
-        for g, target in pairs(db.targets) do
-            if target == found then db.targets[g] = nil end
-        end
-        db.chars[found] = nil
-        print_("Removed " .. rest .. ".")
-    elseif cmd == "exclude" and rest ~= "" then
+    elseif command == "exclude" and rest ~= "" then
         local itemID = itemIDOf(rest)
         if itemID then excludeItem(itemID, nameOf(rest)) else excludeWord(rest) end
         if state.owned then refill() end
-    elseif cmd == "include" and rest ~= "" then
+    elseif command == "include" and rest ~= "" then
         local itemID = itemIDOf(rest)
         local word = rest:lower()
         if itemID then db.exclude.items[itemID] = nil end
-        for i, w in ipairs(db.exclude.words) do
-            if w == word then table.remove(db.exclude.words, i) break end
+        for index, existing in ipairs(db.exclude.words) do
+            if existing == word then table.remove(db.exclude.words, index) break end
         end
         for id, name in pairs(db.exclude.items) do
             if name:lower() == word then db.exclude.items[id] = nil end
         end
-        print_("Will send " .. rest .. " again.")
+        addon.Print("Will send " .. rest .. " again.")
         if state.owned then refill() end
-    elseif cmd == "excluded" then
+    elseif command == "excluded" then
         local out = {}
-        for _, w in ipairs(db.exclude.words) do out[#out + 1] = "\"" .. w .. "\"" end
+        for _, word in ipairs(db.exclude.words) do out[#out + 1] = "\"" .. word .. "\"" end
         for _, name in pairs(db.exclude.items) do out[#out + 1] = name end
-        print_(#out > 0 and ("Never sent: " .. table.concat(out, ", ")) or "Nothing excluded.")
-    elseif cmd == "list" then
-        print_("Reagents to " .. coloredName(db.targets.reagents) .. ", pelts to " .. coloredName(db.targets.pelts)
-            .. ", BoE items to " .. coloredName(db.targets.boe) .. ".")
-        local list = mailableChars()
-        print_(#list > 0 and ("Alts you can mail from here: " .. table.concat((function()
-            local out = {}
-            for i, key in ipairs(list) do out[i] = coloredName(key) end
-            return out
-        end)(), ", ")) or "No alts you can mail from here yet.")
+        addon.Print(#out > 0 and ("Never sent: " .. table.concat(out, ", ")) or "Nothing excluded.")
+    elseif command == "list" then
+        for _, category in ipairs(Categories.Ordered()) do
+            addon.Print(Rules.byId[category.rule].label .. " to " .. Characters.ColoredName(category.target) .. ".")
+        end
+        local names = {}
+        for index, key in ipairs(Characters.Mailable()) do names[index] = Characters.ColoredName(key) end
+        addon.Print(#names > 0 and ("Alts you can mail from here: " .. table.concat(names, ", "))
+            or "No alts you can mail from here yet.")
+    elseif command == "settings" then
+        addon.OpenSettings()
     else
-        print_("Open a mailbox and pick your alts in the panel beside it.")
-        print_("/ac list - who gets what, and which alts are known")
-        print_("/ac add First Last - add an alt you haven't logged into yet")
-        print_("/ac remove Name - forget an alt")
-        print_("/ac exclude word|[item] - never send items with that word in their name, or that item")
-        print_("/ac include word|[item] - send it again")
-        print_("/ac excluded - what's never sent (or Alt-click an attachment to add one)")
+        addon.Print("Open a mailbox and set up your categories in the panel beside it, then press Start.")
+        addon.Print("/ac list - who gets what, and which alts are known")
+        addon.Print("/ac add First Last - add an alt you haven't logged into yet")
+        addon.Print("/ac remove Name - forget an alt")
+        addon.Print("/ac exclude word|[item] - never send items with that word in their name, or that item")
+        addon.Print("/ac include word|[item] - send it again")
+        addon.Print("/ac excluded - what's never sent (or Alt-click an attachment to add one)")
+        addon.Print("/ac settings - open the settings (mailing other accounts)")
     end
-    if panel then panel:Update() end
+    addon.Refresh()
 end

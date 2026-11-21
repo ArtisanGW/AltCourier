@@ -1,11 +1,11 @@
 -- A mailbox visit with stand-ins for the game: the game's mailbox on screen (open),
 -- or covered by another addon's mail window (covered). No other addon is loaded.
--- Run from the repo root: luajit tests/mailbox_test.lua AltCourier.lua open|covered
-local file, mode = arg[1], arg[2]
+-- Run from the repo root: luajit tests/mailbox_test.lua open|covered
+local mode = arg[1]
 local handlers, calls = {}, {}
 local function frame(name)
   local f = { shown = true, parent = nil, text = nil }
-  local mt = { __index = function(t, k) return function() end end }
+  local mt = { __index = function(t, k) if type(k) == "string" and k:match("^%u") then return function() end end end }
   setmetatable(f, mt)
   f.RegisterEvent = function() end
   f.SetScript = function(self, n, fn) if n == "OnEvent" then handlers[#handlers + 1] = fn end self[n] = fn end
@@ -23,9 +23,10 @@ end
 CreateFrame = function(_, name, parent, template)
   local f = frame(name)
   if name == "AltCourierPanel" then _G.P = f end
-  if template == "UIPanelCloseButton" then _G.CLOSE = f end
+  if template == "UIPanelCloseButton" and not _G.CLOSE then _G.CLOSE = f end -- the panel's own, made before any row
   return f
 end
+CreateFramePool = function(_, parent) return { Acquire = function() return frame("row") end, ReleaseAll = function() end } end
 local timers = {}; C_Timer = { After = function(_, fn) timers[#timers + 1] = fn end }
 local function run() for _ = 1, 5 do local t = timers; timers = {}; for _, fn in ipairs(t) do fn() end end end
 wipe = function(t) for k in pairs(t) do t[k] = nil end return t end
@@ -51,20 +52,29 @@ C_Item = { GetItemInfoInstant = function(id) local it = byId[id]; return id, nil
 local attached = {}; HasSendMailItem = function(i) return attached[i] ~= nil end
 ClickSendMailItemButton = function(i) attached[i] = picked.name; picked = nil end
 CursorHasItem = function() return false end; ClearCursor = function() end
-local to; SendMailNameEditBox = { SetText = function(_, t) to = t end }; SendMailSubjectEditBox = { SetText = function() end }
+local to; SendMailNameEditBox = frame("to"); SendMailNameEditBox.SetText = function(_, t) to = t end; SendMailNameEditBox.GetText = function() return to or "" end
+local subject; SendMailSubjectEditBox = frame("subject"); SendMailSubjectEditBox.SetText = function(_, t) subject = t end
 AltCourierDB = { chars = { ["Bob Smith-Forever"] = { name = "Bob", last = "Smith", realm = "Forever", faction = "Alliance" } },
-  targets = { boe = "Bob Smith-Forever", reagents = "Bob Smith-Forever" } }
-assert(loadfile(file))("AltCourier")
+  categories = { { rule = "boe", target = "Bob Smith-Forever" }, { rule = "reagents", target = "Bob Smith-Forever" } } }
+require = nil
+local addon = dofile("tests/loader.lua")("AltCourier")
 local function fire(e, a) for _, fn in ipairs(handlers) do fn(nil, e, a) end end
 fire("ADDON_LOADED", "AltCourier"); fire("PLAYER_LOGIN")
 fire("MAIL_SHOW"); run()
 local function plain(s) return ((s or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("\n", " ")) end
 print(mode .. ": panel parent=" .. tostring(P.parent and P.parent.name), "status=" .. plain(P.status.text))
-print("  attached before Send tab:", next(attached) and attached[1] or "none")
-if mode == "open" then SendMailFrame.shown = true; SendMailFrame.hookOnShow(); run() end
+assert(not next(attached), "nothing is attached before Start")
+P.start.OnClick(P.start); run()
+if mode == "open" then
+  assert(not next(attached), "Start does nothing until the Send Mail tab is open")
+  SendMailFrame.shown = true; SendMailFrame.hookOnShow(); P.start.OnClick(P.start); run()
+end
 print("  attached:", attached[1] or "none", "| To:", to, "| status:", plain(P.status.text))
 for _, c in ipairs(calls) do if c:find("MailFrame") then print("  !! addon showed a game window:", c) end end
 
+-- Typing in the mail takes it from us: it stops.
+SendMailNameEditBox.hookOnTextChanged(SendMailNameEditBox, true)
+assert(P.status.text:find("stopped"), "typing in the mail stops the run")
 -- The game's mailbox goes away without MAIL_CLOSED (it sat under another window).
 MailFrame.shown = false
 if P.OnUpdate then P.OnUpdate(P, 0.3) end
@@ -76,7 +86,8 @@ if CLOSE and CLOSE.OnClick then CLOSE.OnClick(CLOSE) print("  X pressed -> panel
 
 -- Checks
 for _, c in ipairs(calls) do assert(not c:find("MailFrame"), "the addon never shows the game's windows: " .. c) end
-assert(attached[1] == "Linen Cloth", "the reagent is attached")
+assert(attached[1] == "Sword" and attached[2] == "Linen Cloth", "both kinds for the same alt go in one mail")
+assert(subject == "Items", "a mixed mail is subject Items")
 assert(to == "Bob Smith", "To: gets the full name")
 if mode == "open" then
   assert(P.parent == MailFrame, "the panel sits on the game's mailbox")

@@ -4,12 +4,13 @@ local chat = {}
 -- Stand-ins for the game, enough to run login + /rpost and read the To: name.
 local handlers, frames = {}, {}
 local function frame()
-  local f = setmetatable({}, {__index=function(t,k) return function(...) end end})
+  local f = setmetatable({}, {__index=function(t,k) if type(k)=="string" and k:match("^%u") then return function() end end end})
   f.RegisterEvent=function() end
   f.SetScript=function(self,n,fn) if n=="OnEvent" then handlers[#handlers+1]=fn end end
   return f
 end
 CreateFrame=function() return frame() end
+CreateFramePool=function() return {} end
 C_Timer={After=function() end}
 wipe=function(t) for k in pairs(t) do t[k]=nil end return t end
 UnitName=function() return "Reagents" end
@@ -20,25 +21,25 @@ UnitClass=function() return "Mage","MAGE" end
 DEFAULT_CHAT_FRAME={AddMessage=function(_,m) chat[#chat+1]=(m:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")) end}
 SlashCmdList={}
 -- Saved from before: this character and a picker keyed by first name only.
-AltCourierDB={chars={["Reagents-Forever"]={name="Reagents",realm="Forever",faction="Alliance"}}, targets={reagents="Reagents-Forever"}}
-local chunk=assert(loadfile("AltCourier.lua")); chunk("AltCourier")
+AltCourierDB={chars={["Reagents-Forever"]={name="Reagents",realm="Forever",faction="Alliance"}}, categories={{rule="reagents",target="Reagents-Forever"}}}
+dofile("tests/loader.lua")("AltCourier")
 local function fire(e,a) for _,fn in ipairs(handlers) do fn(nil,e,a) end end
 fire("ADDON_LOADED","AltCourier"); fire("PLAYER_LOGIN")
 for k,c in pairs(AltCourierDB.chars) do print("saved:", k, c.name, c.last) end
-print("reagents picker ->", AltCourierDB.targets.reagents)
+print("reagents category ->", AltCourierDB.categories[1].target)
 SlashCmdList.ALTCOURIER("add skinny hidesworth")
 for k,c in pairs(AltCourierDB.chars) do print("saved:", k, c.name, c.last) end
 -- Log in as the alt and check what goes in To:
 UnitName=function() return "Skinny" end; UnitFullName=function() return "Skinny","Hidesworth" end
-fire("PLAYER_LOGIN"); AltCourierDB.targets.pelts="Reagents Artisan-Forever"
+fire("PLAYER_LOGIN"); AltCourierDB.categories[2]={rule="leather",target="Reagents Artisan-Forever"}
 SlashCmdList.ALTCOURIER("list")
 
 -- Checks
 local db = AltCourierDB
 assert(db.chars["Reagents Artisan-Forever"] and db.chars["Reagents Artisan-Forever"].last == "Artisan", "login records the last name")
 assert(db.chars["Reagents-Forever"] == nil, "the old first-name entry is moved")
-assert(db.targets.reagents == "Reagents Artisan-Forever", "a picker set to the old entry follows it")
+assert(db.categories[1].target == "Reagents Artisan-Forever", "a category sending to the old entry follows it")
 assert(db.chars["Skinny Hidesworth-Forever"] and db.chars["Skinny Hidesworth-Forever"].last == "Hidesworth", "/ac add takes First Last")
 local listed = table.concat(chat, "\n")
-assert(listed:find("Reagents to Reagents Artisan", 1, true), "/ac list shows full names")
+assert(listed:find("Other reagents to Reagents Artisan", 1, true), "/ac list shows full names")
 print("name_test: ok")
