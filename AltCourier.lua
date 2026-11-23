@@ -12,11 +12,9 @@ local ADDON, addon = ...
 local MAX_ATTACH = ATTACHMENTS_MAX_SEND or 12
 local NUM_BAGS = NUM_BAG_SLOTS or 4
 
-local GetItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-
 local Characters, Categories, Rules
 
-local db
+local settings
 
 -- What this mailbox visit is doing.
 local state = {
@@ -49,10 +47,10 @@ local function nameOf(link) return link and link:match("%[(.-)%]") end
 
 -- Never mailed: items picked one by one, or any item whose name holds a word.
 local function isExcluded(itemID, name)
-    if db.exclude.items[itemID] then return true end
+    if settings.exclude.items[itemID] then return true end
     name = name and name:lower()
     if name then
-        for _, word in ipairs(db.exclude.words) do
+        for _, word in ipairs(settings.exclude.words) do
             if name:find(word, 1, true) then return true end
         end
     end
@@ -60,8 +58,8 @@ local function isExcluded(itemID, name)
 end
 
 local function excludedCount()
-    local count = #db.exclude.words
-    for _ in pairs(db.exclude.items) do count = count + 1 end
+    local count = #settings.exclude.words
+    for _ in pairs(settings.exclude.items) do count = count + 1 end
     return count
 end
 
@@ -172,7 +170,7 @@ local function showIdle()
     local summary = readySummary()
     if summary ~= "" then
         setStatus("Ready: " .. summary .. ".\nPress |cffffd100Start|r when you want to send.")
-    elseif #db.categories == 0 then
+    elseif #settings.categories == 0 then
         setStatus("Add a kind of item to send.")
     else
         setStatus("Nothing to send yet.\nPick who gets each kind of item.")
@@ -417,35 +415,35 @@ end
 
 local function excludeItem(itemID, name)
     if not itemID then return end
-    db.exclude.items[itemID] = name or db.exclude.items[itemID] or ("item " .. itemID)
-    addon.Print("Won't send " .. db.exclude.items[itemID] .. " any more. /ac excluded to undo.")
+    settings.exclude.items[itemID] = name or settings.exclude.items[itemID] or ("item " .. itemID)
+    addon.Print("Won't send " .. settings.exclude.items[itemID] .. " any more. /ac excluded to undo.")
     addon.Refresh()
 end
 
 local function excludeWord(word)
     word = word:lower()
-    for _, existing in ipairs(db.exclude.words) do if existing == word then return end end
-    table.insert(db.exclude.words, word)
+    for _, existing in ipairs(settings.exclude.words) do if existing == word then return end end
+    table.insert(settings.exclude.words, word)
     addon.Print("Won't send items with \"" .. word .. "\" in their name.")
     addon.Refresh()
 end
 
 local function openExcluded(owner)
     local entries = {}
-    for _, word in ipairs(db.exclude.words) do
+    for _, word in ipairs(settings.exclude.words) do
         entries[#entries + 1] = { text = "Name has \"" .. word .. "\"  |cffff5555x|r", onClick = function()
-            for index, existing in ipairs(db.exclude.words) do
-                if existing == word then table.remove(db.exclude.words, index) break end
+            for index, existing in ipairs(settings.exclude.words) do
+                if existing == word then table.remove(settings.exclude.words, index) break end
             end
             panel:Update(); refill()
         end }
     end
     local ids = {}
-    for itemID in pairs(db.exclude.items) do ids[#ids + 1] = itemID end
-    table.sort(ids, function(first, second) return db.exclude.items[first] < db.exclude.items[second] end)
+    for itemID in pairs(settings.exclude.items) do ids[#ids + 1] = itemID end
+    table.sort(ids, function(first, second) return settings.exclude.items[first] < settings.exclude.items[second] end)
     for _, itemID in ipairs(ids) do
-        entries[#entries + 1] = { text = db.exclude.items[itemID] .. "  |cffff5555x|r", onClick = function()
-            db.exclude.items[itemID] = nil
+        entries[#entries + 1] = { text = settings.exclude.items[itemID] .. "  |cffff5555x|r", onClick = function()
+            settings.exclude.items[itemID] = nil
             panel:Update(); refill()
         end }
     end
@@ -579,8 +577,8 @@ local function buildPanel()
             row.rule = category.rule
             row.label:SetText(Rules.byId[category.rule].label)
             local target = category.target
-            if target and not Characters.CanMail(target) and db.chars[target] then
-                row.pick.Label("|cffff5555" .. Characters.FullName(db.chars[target]) .. "|r")
+            if target and not Characters.CanMail(target) and settings.chars[target] then
+                row.pick.Label("|cffff5555" .. Characters.FullName(settings.chars[target]) .. "|r")
             else
                 row.pick.Label(Characters.ColoredName(target))
             end
@@ -617,7 +615,7 @@ local function buildPanel()
         self:StopMovingOrSizing()
         if not state.floating then return end
         local point, _, relativePoint, x, y = self:GetPoint(1)
-        db.floatAt = { point, relativePoint, x, y }
+        settings.floatAt = { point, relativePoint, x, y }
     end)
 
     hookAttachments()
@@ -683,7 +681,7 @@ local function placePanel()
     if state.floating then
         panel:SetParent(UIParent)
         panel:SetFrameStrata("HIGH")
-        local at = db.floatAt
+        local at = settings.floatAt
         if at then
             panel:SetPoint(at[1], UIParent, at[2], at[3], at[4])
         else
@@ -714,13 +712,13 @@ events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" and arg1 == ADDON then
         Characters, Categories, Rules = addon.Characters, addon.Categories, addon.Rules
         AltCourierDB = AltCourierDB or {}
-        db = AltCourierDB
-        addon.db = db
-        db.chars = db.chars or {}
-        db.exclude = db.exclude or {}
-        db.exclude.items = db.exclude.items or {}
-        db.exclude.words = db.exclude.words or {}
-        db.crossAccount = db.crossAccount == true   -- off until the player agrees (Settings.lua)
+        settings = AltCourierDB
+        addon.settings = settings
+        settings.chars = settings.chars or {}
+        settings.exclude = settings.exclude or {}
+        settings.exclude.items = settings.exclude.items or {}
+        settings.exclude.words = settings.exclude.words or {}
+        settings.crossAccount = settings.crossAccount == true   -- off until the player agrees (Settings.lua)
         Categories.Load()
     elseif event == "PLAYER_LOGIN" then
         Characters.RememberMe()
@@ -780,19 +778,19 @@ SlashCmdList.ALTCOURIER = function(message)
     elseif command == "include" and rest ~= "" then
         local itemID = itemIDOf(rest)
         local word = rest:lower()
-        if itemID then db.exclude.items[itemID] = nil end
-        for index, existing in ipairs(db.exclude.words) do
-            if existing == word then table.remove(db.exclude.words, index) break end
+        if itemID then settings.exclude.items[itemID] = nil end
+        for index, existing in ipairs(settings.exclude.words) do
+            if existing == word then table.remove(settings.exclude.words, index) break end
         end
-        for id, name in pairs(db.exclude.items) do
-            if name:lower() == word then db.exclude.items[id] = nil end
+        for id, name in pairs(settings.exclude.items) do
+            if name:lower() == word then settings.exclude.items[id] = nil end
         end
         addon.Print("Will send " .. rest .. " again.")
         if state.owned then refill() end
     elseif command == "excluded" then
         local out = {}
-        for _, word in ipairs(db.exclude.words) do out[#out + 1] = "\"" .. word .. "\"" end
-        for _, name in pairs(db.exclude.items) do out[#out + 1] = name end
+        for _, word in ipairs(settings.exclude.words) do out[#out + 1] = "\"" .. word .. "\"" end
+        for _, name in pairs(settings.exclude.items) do out[#out + 1] = name end
         addon.Print(#out > 0 and ("Never sent: " .. table.concat(out, ", ")) or "Nothing excluded.")
     elseif command == "list" then
         for _, category in ipairs(Categories.Ordered()) do

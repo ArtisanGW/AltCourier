@@ -1,26 +1,26 @@
 -- The categories the player keeps: each is one kind of item (Rules.lua) and the
 -- alt who gets it. They can be added and removed; one alt can have several, a
 -- category can have no alt (its items stay in the bags).
--- Saved as db.categories = { { rule = "herbs", target = "Bob Smith-Forever" }, ... }.
+-- Saved as settings.categories = { { rule = "herbs", target = "Bob Smith-Forever" }, ... }.
 local _, addon = ...
 
 local Categories = {}
 addon.Categories = Categories
 
-local function database() return addon.db end
+local function database() return addon.settings end
 
 -- Starts a new player with the old fixed three, and moves an older save's
--- db.targets (one alt per fixed kind) over to categories.
+-- settings.targets (one alt per fixed kind) over to categories.
 function Categories.Load()
-    local db = database()
-    if db.categories then return end
-    local oldTargets = db.targets or {}
+    local settings = database()
+    if settings.categories then return end
+    local oldTargets = settings.targets or {}
     local oldNames = { reagents = "reagents", leather = "pelts", boe = "boe" }
-    db.categories = {}
+    settings.categories = {}
     for _, ruleId in ipairs(addon.Rules.DEFAULT_IDS) do
-        db.categories[#db.categories + 1] = { rule = ruleId, target = oldTargets[oldNames[ruleId]] }
+        settings.categories[#settings.categories + 1] = { rule = ruleId, target = oldTargets[oldNames[ruleId]] }
     end
-    db.targets = nil
+    settings.targets = nil
 end
 
 function Categories.Find(ruleId)

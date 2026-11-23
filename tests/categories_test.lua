@@ -20,16 +20,16 @@ AltCourierDB={chars={["Bob Smith-Forever"]={name="Bob",last="Smith",realm="Forev
 local addon=dofile("tests/loader.lua")("AltCourier")
 local function fire(e,a) for _,fn in ipairs(handlers) do fn(nil,e,a) end end
 fire("ADDON_LOADED","AltCourier"); fire("PLAYER_LOGIN")
-local db, Categories, Rules, Characters = AltCourierDB, addon.Categories, addon.Rules, addon.Characters
+local settings, Categories, Rules, Characters = AltCourierDB, addon.Categories, addon.Rules, addon.Characters
 
 -- The old save moves over.
-assert(db.targets == nil, "old targets are gone")
+assert(settings.targets == nil, "old targets are gone")
 assert(Categories.Find("reagents").target == "Bob Smith-Forever" and Categories.Find("leather").target == "Bob Smith-Forever", "old pickers kept")
 assert(Categories.Find("boe") and Categories.Find("boe").target == nil, "BoE stays, with no alt")
 
 -- Add and remove.
 Categories.Add("herbs"); Categories.Add("herbs")
-local count = 0; for _, c in ipairs(db.categories) do if c.rule == "herbs" then count = count + 1 end end
+local count = 0; for _, c in ipairs(settings.categories) do if c.rule == "herbs" then count = count + 1 end end
 assert(count == 1, "a kind is added once")
 Categories.Remove("herbs"); assert(not Categories.Find("herbs"), "a category can be removed")
 
@@ -48,17 +48,17 @@ Categories.Remove("everything"); ordered = Categories.Ordered()
 assert(claimed({ classID = 0, subclassID = 1 }) == nil, "without everything else, a potion stays")
 
 -- One alt, forgotten: no category sends to them.
-db.chars["Eve Jones-Forever"] = { name = "Eve", last = "Jones", realm = "Forever", faction = "Alliance" }
+settings.chars["Eve Jones-Forever"] = { name = "Eve", last = "Jones", realm = "Forever", faction = "Alliance" }
 assert(Characters.CanMail("Eve Jones-Forever"), "same account, same realm: mailable")
 assert(Characters.Remove("Bob Smith-Forever") and Categories.Find("reagents").target == nil, "removing an alt clears their categories")
 
 -- Other accounts: typed in, and mailed only after the player agreed.
 local key = Characters.Add("Zed Other", true)
-assert(db.chars[key].otherAccount, "typed-in other-account character is marked")
+assert(settings.chars[key].otherAccount, "typed-in other-account character is marked")
 assert(not Characters.CanMail(key), "not mailable until agreed")
-db.crossAccount = true
+settings.crossAccount = true
 assert(Characters.CanMail(key), "mailable once agreed")
-db.crossAccount = false
+settings.crossAccount = false
 assert(not Characters.CanMail(key), "and not any more when turned off")
-assert(db.crossAccount == false, "off by default")
+assert(settings.crossAccount == false, "off by default")
 print("categories_test: ok")

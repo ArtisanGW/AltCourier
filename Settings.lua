@@ -13,7 +13,7 @@ local CROSS_ACCOUNT_WARNING = "Mail to your other accounts\n\n"
 local confirmedNow = false
 
 local function askToAddCharacter()
-    if not addon.db.crossAccount then
+    if not addon.settings.crossAccount then
         addon.Print("Tick \"Mail other accounts\" first.")
         return
     end
@@ -39,7 +39,7 @@ function addon.RegisterSettings()
     addon.category = category
 
     local variableName = "AltCourier_crossAccount"
-    local setting = Settings.RegisterAddOnSetting(category, variableName, "crossAccount", addon.db,
+    local setting = Settings.RegisterAddOnSetting(category, variableName, "crossAccount", addon.settings,
         Settings.VarType.Boolean, "Mail other accounts", false)
     Settings.SetOnValueChangedCallback(variableName, function(_, _, value)
         addon.Refresh()

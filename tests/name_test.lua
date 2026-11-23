@@ -35,11 +35,11 @@ fire("PLAYER_LOGIN"); AltCourierDB.categories[2]={rule="leather",target="Reagent
 SlashCmdList.ALTCOURIER("list")
 
 -- Checks
-local db = AltCourierDB
-assert(db.chars["Reagents Artisan-Forever"] and db.chars["Reagents Artisan-Forever"].last == "Artisan", "login records the last name")
-assert(db.chars["Reagents-Forever"] == nil, "the old first-name entry is moved")
-assert(db.categories[1].target == "Reagents Artisan-Forever", "a category sending to the old entry follows it")
-assert(db.chars["Skinny Hidesworth-Forever"] and db.chars["Skinny Hidesworth-Forever"].last == "Hidesworth", "/ac add takes First Last")
+local settings = AltCourierDB
+assert(settings.chars["Reagents Artisan-Forever"] and settings.chars["Reagents Artisan-Forever"].last == "Artisan", "login records the last name")
+assert(settings.chars["Reagents-Forever"] == nil, "the old first-name entry is moved")
+assert(settings.categories[1].target == "Reagents Artisan-Forever", "a category sending to the old entry follows it")
+assert(settings.chars["Skinny Hidesworth-Forever"] and settings.chars["Skinny Hidesworth-Forever"].last == "Hidesworth", "/ac add takes First Last")
 local listed = table.concat(chat, "\n")
 assert(listed:find("Other reagents to Reagents Artisan", 1, true), "/ac list shows full names")
 print("name_test: ok")
