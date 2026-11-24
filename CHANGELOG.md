@@ -1,5 +1,9 @@
 # Alt Courier
 
+## 0.1.2
+
+- Tidier code behind the scenes: nothing changes in game
+
 ## 0.1.1
 
 - New icon: a stack of letters, and an arrow that splits three ways
