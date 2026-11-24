@@ -681,9 +681,9 @@ local function placePanel()
     if state.floating then
         panel:SetParent(UIParent)
         panel:SetFrameStrata("HIGH")
-        local at = settings.floatAt
-        if at then
-            panel:SetPoint(at[1], UIParent, at[2], at[3], at[4])
+        local savedPoint = settings.floatAt
+        if savedPoint then
+            panel:SetPoint(savedPoint[1], UIParent, savedPoint[2], savedPoint[3], savedPoint[4])
         else
             panel:SetPoint("LEFT", UIParent, "CENTER", 330, 60)
         end
