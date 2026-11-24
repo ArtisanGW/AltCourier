@@ -1,5 +1,5 @@
--- Items never mailed: picked one by one (Alt-click an attachment, /ac exclude [item]),
--- or any item whose name holds a word (/ac exclude word). Kept in
+-- Items never mailed: picked one by one (Alt-click an attachment, /altc exclude [item]),
+-- or any item whose name holds a word (/altc exclude word). Kept in
 -- AltCourierDB.exclude = { items = { [itemID] = name }, words = { word } }.
 local _, addon = ...
 local Exclusions = {}
@@ -32,7 +32,7 @@ function Exclusions.AddItem(itemID, name)
     if not itemID then return end
     local items = excluded().items
     items[itemID] = name or items[itemID] or ("item " .. itemID)
-    addon.Print("Won't send " .. items[itemID] .. " any more. /ac excluded to undo.")
+    addon.Print("Won't send " .. items[itemID] .. " any more. /altc excluded to undo.")
     addon.Refresh()
 end
 
@@ -52,7 +52,7 @@ end
 
 function Exclusions.RemoveItem(itemID) excluded().items[itemID] = nil end
 
--- /ac include: an item link, a word, or an excluded item's name, sent again.
+-- /altc include: an item link, a word, or an excluded item's name, sent again.
 function Exclusions.Include(text)
     local itemID = Exclusions.ItemIDOf(text)
     local word = text:lower()

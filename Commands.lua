@@ -1,4 +1,4 @@
--- /altcourier (or /ac): alts, exclusions, the list and the settings by command.
+-- /altcourier (or /altc): alts, exclusions, the list and the settings by command.
 local _, addon = ...
 
 local function excludedList()
@@ -21,17 +21,17 @@ end
 
 local function printHelp()
     addon.Print("Open a mailbox and set up your categories in the panel beside it, then press Start.")
-    addon.Print("/ac list - who gets what, and which alts are known")
-    addon.Print("/ac add First Last - add an alt you haven't logged into yet")
-    addon.Print("/ac remove Name - forget an alt")
-    addon.Print("/ac exclude word|[item] - never send items with that word in their name, or that item")
-    addon.Print("/ac include word|[item] - send it again")
-    addon.Print("/ac excluded - what's never sent (or Alt-click an attachment to add one)")
-    addon.Print("/ac settings - open the settings (mailing other accounts)")
+    addon.Print("/altc list - who gets what, and which alts are known")
+    addon.Print("/altc add First Last - add an alt you haven't logged into yet")
+    addon.Print("/altc remove Name - forget an alt")
+    addon.Print("/altc exclude word|[item] - never send items with that word in their name, or that item")
+    addon.Print("/altc include word|[item] - send it again")
+    addon.Print("/altc excluded - what's never sent (or Alt-click an attachment to add one)")
+    addon.Print("/altc settings - open the settings (mailing other accounts)")
 end
 
 SLASH_ALTCOURIER1 = "/altcourier"
-SLASH_ALTCOURIER2 = "/ac"
+SLASH_ALTCOURIER2 = "/altc"
 SlashCmdList.ALTCOURIER = function(message)
     local Characters, Exclusions, Run = addon.Characters, addon.Exclusions, addon.Run
     local command, rest = (message or ""):match("^%s*(%S*)%s*(.-)%s*$")

@@ -21,7 +21,7 @@ function PanelLists.Recipients(owner, category)
     end
     addon.Picker.Open(owner, category.rule, entries)
     if #entries == 1 then
-        addon.Print("No alts known yet. Log into each alt once with Alt Courier on, or use /ac add First Last.")
+        addon.Print("No alts known yet. Log into each alt once with Alt Courier on, or use /altc add First Last.")
     end
 end
 

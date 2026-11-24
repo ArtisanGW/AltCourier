@@ -4,6 +4,7 @@
 
 - Settings: "Add character" for another account stays greyed out until you tick its box
 - Tidier code behind the scenes
+- The chat command is now /altc (or /altcourier); /ac no longer works
 
 ## 0.1.2
 

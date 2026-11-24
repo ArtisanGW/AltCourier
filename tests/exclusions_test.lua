@@ -1,4 +1,4 @@
--- Exclusions: items and words never sent, and /ac include undoing them.
+-- Exclusions: items and words never sent, and /altc include undoing them.
 -- Run from the repo root: luajit tests/exclusions_test.lua (run.sh runs it).
 local addon = { settings = { exclude = { items = {}, words = {} } }, Print = function() end, Refresh = function() end }
 assert(loadfile("Exclusions.lua"))("AltCourier", addon)

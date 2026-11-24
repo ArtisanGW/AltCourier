@@ -20,12 +20,12 @@ Sending your crafting materials to the right alt, one item at a time, gets old f
 - Looks like the game's own windows
 
 ## Commands
-- /ac list: who gets what, and which alts are known
-- /ac add First Last: add an alt
-- /ac settings: open the settings (mailing other accounts)
-- /ac remove Name: forget an alt
-- /ac exclude word or [item]: never send it
-- /ac include word or [item]: send it again
+- /altc list: who gets what, and which alts are known
+- /altc add First Last: add an alt
+- /altc settings: open the settings (mailing other accounts)
+- /altc remove Name: forget an alt
+- /altc exclude word or [item]: never send it
+- /altc include word or [item]: send it again
 
 It's a simple tool with no dependencies: it uses only the game.
 

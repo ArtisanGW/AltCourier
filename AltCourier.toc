@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Alt Courier
-## Notes: Fills mail to your alts with the items of the categories you choose. You press Start, then Send. Commands: /ac.
+## Notes: Fills mail to your alts with the items of the categories you choose. You press Start, then Send. Commands: /altc.
 ## Author: Artisan
 ## Version: @project-version@
 ## SavedVariables: AltCourierDB

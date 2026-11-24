@@ -8,7 +8,7 @@
 --   Rules (kinds of items), Categories, Characters (who can be mailed),
 --   Exclusions (never sent), Bags (what to send), Run (filling the mail),
 --   Look, Picker, PanelLists, Panel (the panel), Gamepad (Y never sends),
---   Mailbox (a visit, where the panel sits), Popup, Settings, Commands (/ac).
+--   Mailbox (a visit, where the panel sits), Popup, Settings, Commands (/altc).
 
 local ADDON, addon = ...
 

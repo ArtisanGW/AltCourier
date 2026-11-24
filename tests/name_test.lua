@@ -1,4 +1,4 @@
--- Full names ("First Last"), moving old first-name entries, /ac add and list.
+-- Full names ("First Last"), moving old first-name entries, /altc add and list.
 -- Run from the repo root: luajit tests/name_test.lua
 local chat = {}
 -- Stand-ins for the game, enough to run login + /rpost and read the To: name.
@@ -39,7 +39,7 @@ local settings = AltCourierDB
 assert(settings.chars["Reagents Artisan-Forever"] and settings.chars["Reagents Artisan-Forever"].last == "Artisan", "login records the last name")
 assert(settings.chars["Reagents-Forever"] == nil, "the old first-name entry is moved")
 assert(settings.categories[1].target == "Reagents Artisan-Forever", "a category sending to the old entry follows it")
-assert(settings.chars["Skinny Hidesworth-Forever"] and settings.chars["Skinny Hidesworth-Forever"].last == "Hidesworth", "/ac add takes First Last")
+assert(settings.chars["Skinny Hidesworth-Forever"] and settings.chars["Skinny Hidesworth-Forever"].last == "Hidesworth", "/altc add takes First Last")
 local listed = table.concat(chat, "\n")
-assert(listed:find("Other reagents to Reagents Artisan", 1, true), "/ac list shows full names")
+assert(listed:find("Other reagents to Reagents Artisan", 1, true), "/altc list shows full names")
 print("name_test: ok")
