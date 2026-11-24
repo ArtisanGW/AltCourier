@@ -1,5 +1,6 @@
 <!-- The project description for CurseForge, kept here to paste: not in the release zip (.pkgmeta). -->
 **Summary:** Sends your crafting materials and Bind on Equip items to your alts. You pick the categories, press Start, then Send.
+**Categories:** Mail, Professions
 
 ## Description
 
