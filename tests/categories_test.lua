@@ -2,14 +2,14 @@
 -- other accounts only when the player has agreed. Run from the repo root.
 local handlers = {}
 local function frame()
-  local f = setmetatable({}, {__index=function(_,k) if type(k)=="string" and k:match("^%u") then return function() end end end})
-  f.SetScript=function(self,n,fn) if n=="OnEvent" then handlers[#handlers+1]=fn end end
-  return f
+  local fakeFrame = setmetatable({}, {__index=function(_,key) if type(key)=="string" and key:match("^%u") then return function() end end end})
+  fakeFrame.SetScript=function(self,scriptName,handler) if scriptName=="OnEvent" then handlers[#handlers+1]=handler end end
+  return fakeFrame
 end
 CreateFrame=function() return frame() end
 CreateFramePool=function() return {} end
 C_Timer={After=function() end}
-wipe=function(t) for k in pairs(t) do t[k]=nil end return t end
+wipe=function(wiped) for key in pairs(wiped) do wiped[key]=nil end return wiped end
 UnitName=function() return "Me" end; UnitFullName=function() return "Me","Mage" end
 GetNormalizedRealmName=function() return "Forever" end; UnitFactionGroup=function() return "Alliance" end
 UnitClass=function() return "Mage","MAGE" end
@@ -18,7 +18,7 @@ DEFAULT_CHAT_FRAME={AddMessage=function() end}; SlashCmdList={}
 AltCourierDB={chars={["Bob Smith-Forever"]={name="Bob",last="Smith",realm="Forever",faction="Alliance"}},
   targets={reagents="Bob Smith-Forever", pelts="Bob Smith-Forever"}}
 local addon=dofile("tests/loader.lua")("AltCourier")
-local function fire(e,a) for _,fn in ipairs(handlers) do fn(nil,e,a) end end
+local function fire(event,argument) for _,handler in ipairs(handlers) do handler(nil,event,argument) end end
 fire("ADDON_LOADED","AltCourier"); fire("PLAYER_LOGIN")
 local settings, Categories, Rules, Characters = AltCourierDB, addon.Categories, addon.Rules, addon.Characters
 
@@ -29,16 +29,16 @@ assert(Categories.Find("boe") and Categories.Find("boe").target == nil, "BoE sta
 
 -- Add and remove.
 Categories.Add("herbs"); Categories.Add("herbs")
-local count = 0; for _, c in ipairs(settings.categories) do if c.rule == "herbs" then count = count + 1 end end
+local count = 0; for _, category in ipairs(settings.categories) do if category.rule == "herbs" then count = count + 1 end end
 assert(count == 1, "a kind is added once")
 Categories.Remove("herbs"); assert(not Categories.Find("herbs"), "a category can be removed")
 
 -- Who claims an item: BoE first, a profession before the catch-alls.
 Categories.Add("herbs"); Categories.Add("everything")
 local ordered = Categories.Ordered()
-local ids = {}; for _, c in ipairs(ordered) do ids[#ids+1] = c.rule end
+local ids = {}; for _, category in ipairs(ordered) do ids[#ids+1] = category.rule end
 assert(table.concat(ids, ",") == "boe,herbs,leather,reagents,everything", "order: " .. table.concat(ids, ","))
-local function claimed(item) local c = Categories.Claim(ordered, item); return c and c.rule end
+local function claimed(item) local category = Categories.Claim(ordered, item); return category and category.rule end
 assert(claimed({ classID = 7, subclassID = 9 }) == "herbs", "an herb goes to Herbalism")
 assert(claimed({ classID = 7, subclassID = 6 }) == "leather", "leather goes to Skinning")
 assert(claimed({ classID = 7, subclassID = 5 }) == "reagents", "cloth with no Tailoring category goes to other reagents")

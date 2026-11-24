@@ -4,31 +4,31 @@ local chat = {}
 -- Stand-ins for the game, enough to run login + /rpost and read the To: name.
 local handlers, frames = {}, {}
 local function frame()
-  local f = setmetatable({}, {__index=function(t,k) if type(k)=="string" and k:match("^%u") then return function() end end end})
-  f.RegisterEvent=function() end
-  f.SetScript=function(self,n,fn) if n=="OnEvent" then handlers[#handlers+1]=fn end end
-  return f
+  local fakeFrame = setmetatable({}, {__index=function(indexed,key) if type(key)=="string" and key:match("^%u") then return function() end end end})
+  fakeFrame.RegisterEvent=function() end
+  fakeFrame.SetScript=function(self,scriptName,handler) if scriptName=="OnEvent" then handlers[#handlers+1]=handler end end
+  return fakeFrame
 end
 CreateFrame=function() return frame() end
 CreateFramePool=function() return {} end
 C_Timer={After=function() end}
-wipe=function(t) for k in pairs(t) do t[k]=nil end return t end
+wipe=function(wiped) for key in pairs(wiped) do wiped[key]=nil end return wiped end
 UnitName=function() return "Reagents" end
 UnitFullName=function() return "Reagents", "Artisan" end
 GetNormalizedRealmName=function() return "Forever" end
 UnitFactionGroup=function() return "Alliance" end
 UnitClass=function() return "Mage","MAGE" end
-DEFAULT_CHAT_FRAME={AddMessage=function(_,m) chat[#chat+1]=(m:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")) end}
+DEFAULT_CHAT_FRAME={AddMessage=function(_,message) chat[#chat+1]=(message:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")) end}
 SlashCmdList={}
 -- Saved from before: this character and a picker keyed by first name only.
 AltCourierDB={chars={["Reagents-Forever"]={name="Reagents",realm="Forever",faction="Alliance"}}, categories={{rule="reagents",target="Reagents-Forever"}}}
 dofile("tests/loader.lua")("AltCourier")
-local function fire(e,a) for _,fn in ipairs(handlers) do fn(nil,e,a) end end
+local function fire(event,argument) for _,handler in ipairs(handlers) do handler(nil,event,argument) end end
 fire("ADDON_LOADED","AltCourier"); fire("PLAYER_LOGIN")
-for k,c in pairs(AltCourierDB.chars) do print("saved:", k, c.name, c.last) end
+for key,character in pairs(AltCourierDB.chars) do print("saved:", key, character.name, character.last) end
 print("reagents category ->", AltCourierDB.categories[1].target)
 SlashCmdList.ALTCOURIER("add skinny hidesworth")
-for k,c in pairs(AltCourierDB.chars) do print("saved:", k, c.name, c.last) end
+for key,character in pairs(AltCourierDB.chars) do print("saved:", key, character.name, character.last) end
 -- Log in as the alt and check what goes in To:
 UnitName=function() return "Skinny" end; UnitFullName=function() return "Skinny","Hidesworth" end
 fire("PLAYER_LOGIN"); AltCourierDB.categories[2]={rule="leather",target="Reagents Artisan-Forever"}
