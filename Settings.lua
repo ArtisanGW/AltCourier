@@ -1,5 +1,6 @@
 -- The settings page, in the game's own Settings window: only a checkbox and a
--- button (controller-safe). Mailing characters on another account takes two
+-- button (controller-safe), the button greyed out until the box is ticked.
+-- Mailing characters on another account takes two
 -- steps from the player: ticking the box, then agreeing in a popup that says
 -- what it means. Adding such a character is a third.
 local _, addon = ...
@@ -33,6 +34,22 @@ local function askToAddCharacter()
     })
 end
 
+-- The Add character button is greyed out until "Mail other accounts" is ticked.
+-- Hung under the checkbox, the game re-checks the button whenever the box
+-- changes (SettingsListElementMixin:OnParentSettingValueChanged). Its state is
+-- set in a post-hook, not a modify predicate of ours: the game calls those
+-- while it lays out the page, which broke controller navigation before.
+local function greyUntilTicked(buttonInitializer, checkboxInitializer)
+    if checkboxInitializer and buttonInitializer.SetParentInitializer then
+        buttonInitializer:SetParentInitializer(checkboxInitializer)
+    end
+    if type(SettingsButtonControlMixin) ~= "table" then return end
+    hooksecurefunc(SettingsButtonControlMixin, "EvaluateState", function(control)
+        if control:GetElementData() ~= buttonInitializer then return end
+        control.Button:SetEnabled(addon.settings.crossAccount == true)
+    end)
+end
+
 function addon.RegisterSettings()
     if not (Settings and Settings.RegisterVerticalLayoutCategory and Settings.RegisterAddOnSetting) then return end
     local category, layout = Settings.RegisterVerticalLayoutCategory("Alt Courier")
@@ -58,12 +75,14 @@ function addon.RegisterSettings()
             },
         })
     end)
-    Settings.CreateCheckbox(category, setting,
+    local checkbox = Settings.CreateCheckbox(category, setting,
         "Lets you mail characters on your other accounts.\n\nTurning it on asks you to confirm.")
 
     if type(CreateSettingsButtonInitializer) == "function" then
-        layout:AddInitializer(CreateSettingsButtonInitializer("Other account", "Add character", askToAddCharacter,
-            "Adds a character from another account.\n\nOnly works with \"Mail other accounts\" ticked.", true))
+        local addButton = CreateSettingsButtonInitializer("Other account", "Add character", askToAddCharacter,
+            "Adds a character from another account.\n\nOnly works with \"Mail other accounts\" ticked.", true)
+        greyUntilTicked(addButton, checkbox)
+        layout:AddInitializer(addButton)
     end
 
     Settings.RegisterAddOnCategory(category)

@@ -95,4 +95,5 @@ else
   assert(courierPanel.parent == UIParent, "under another mail window, the panel floats")
   assert(courierPanel.shown == false, "the X hides the floating panel")
 end
+
 print("mailbox_test " .. mode .. ": ok")

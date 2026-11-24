@@ -9,6 +9,15 @@
 Rules.lua
 Categories.lua
 Characters.lua
+Exclusions.lua
+Bags.lua
+Run.lua
+Look.lua
+Picker.lua
+PanelLists.lua
+Panel.lua
+Mailbox.lua
 Popup.lua
 Settings.lua
+Commands.lua
 AltCourier.lua

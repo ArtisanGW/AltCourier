@@ -1,5 +1,10 @@
 # Alt Courier
 
+## 0.1.3
+
+- Settings: "Add character" for another account stays greyed out until you tick its box
+- Tidier code behind the scenes
+
 ## 0.1.2
 
 - Tidier code behind the scenes: nothing changes in game
