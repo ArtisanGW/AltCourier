@@ -1,8 +1,19 @@
 <!-- The project description for CurseForge, kept here to paste: not in the release zip (.pkgmeta). -->
-**Summary:** Sends your crafting materials and Bind on Equip items to your alts. You pick the categories, press Start, then Send.
-**Categories:** Mail, Professions
 
-## Description
+# Summary
+
+Sends your crafting materials and Bind on Equip items to your alts. You pick the categories, press Start, then Send.
+
+# Categories
+
+- Mail
+- Professions
+
+# License
+
+Apache License 2.0
+
+# Description
 
 Sending your crafting materials to the right alt, one item at a time, gets old fast. Alt Courier fills the mail for you: pick who gets what, press Start, check the mail and press Send. It never sends anything by itself, and attaches nothing until you press Start.
 
