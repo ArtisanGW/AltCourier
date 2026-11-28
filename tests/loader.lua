@@ -3,7 +3,7 @@
 return function(addonName)
   local addon = {}
   for line in io.lines("AltCourier.toc") do
-    line = line:gsub("\r", "")
+    line = line:gsub("\r", ""):gsub("\\", "/")
     if line:match("%.lua$") then assert(loadfile(line))(addonName, addon) end
   end
   return addon

@@ -1,7 +1,7 @@
 -- Exclusions: items and words never sent, and /altc include undoing them.
 -- Run from the repo root: luajit tests/exclusions_test.lua (run.sh runs it).
 local addon = { settings = { exclude = { items = {}, words = {} } }, Print = function() end, Refresh = function() end }
-assert(loadfile("Exclusions.lua"))("AltCourier", addon)
+assert(loadfile("Code/Exclusions.lua"))("AltCourier", addon)
 local Exclusions = addon.Exclusions
 local link = "|Hitem:123:|h[Silk Cloth]|h"
 assert(Exclusions.ItemIDOf(link) == 123 and Exclusions.NameOf(link) == "Silk Cloth", "reads an item link")

@@ -4,20 +4,20 @@
 ## Author: Artisan
 ## Version: @project-version@
 ## SavedVariables: AltCourierDB
-## IconTexture: Interface\AddOns\AltCourier\Media\icon-64.png
+## IconTexture: Interface\AddOns\AltCourier\Code\Media\icon-64.png
 
-Rules.lua
-Categories.lua
-Characters.lua
-Exclusions.lua
-Bags.lua
-Run.lua
-Look.lua
-Picker.lua
-PanelLists.lua
-Panel.lua
-Mailbox.lua
-Popup.lua
-Settings.lua
-Commands.lua
-AltCourier.lua
+Code/Rules.lua
+Code/Categories.lua
+Code/Characters.lua
+Code/Exclusions.lua
+Code/Bags.lua
+Code/Run.lua
+Code/Look.lua
+Code/Picker.lua
+Code/PanelLists.lua
+Code/Panel.lua
+Code/Mailbox.lua
+Code/Popup.lua
+Code/Settings.lua
+Code/Commands.lua
+Code/AltCourier.lua
