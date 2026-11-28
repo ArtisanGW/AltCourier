@@ -2,7 +2,7 @@
 
 # Summary
 
-Sends your crafting materials and Bind on Equip items to your alts. You pick the categories, press Start, then Send.
+Your alts are waiting on their mats. Pick what they need, press Start, then Send: every crafting material and Bind on Equip item finds its way to the right mailbox.
 
 # Categories
 
