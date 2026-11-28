@@ -17,7 +17,7 @@ GNU General Public License version 3 (GPLv3)
 
 Sending your crafting materials to the right alt, one item at a time, gets old fast. Alt Courier fills the mail for you: pick who gets what, press Start, check the mail and press Send. It never sends anything by itself, and attaches nothing until you press Start.
 
-[![Support me on Ko-fi](https://images.weserv.nl/?url=storage.ko-fi.com/cdn/kofi5.png&h=36)](https://ko-fi.com/artisangw)
+[![Support me on Ko-fi](https://raw.githubusercontent.com/ArtisanGW/assets/main/kofi-button.png)](https://ko-fi.com/artisangw)
 
 ## What it does
 - Add and remove categories: Bind on Equip, each profession's materials (Herbalism, Mining, Skinning, Tailoring, Cooking, Enchanting, Jewelcrafting, Engineering, Inscription), other crafting reagents, and everything else
