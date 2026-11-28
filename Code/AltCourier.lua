@@ -4,11 +4,24 @@
 -- who gets it). Nothing is attached until you press Start: then the mail is
 -- filled with the first batch, you check it and press Send, and the next batch
 -- follows, until nothing is left or you press Stop. It never presses Send itself.
--- This file: the saved settings and the game's events. One job per file:
---   Rules (kinds of items), Categories, Characters (who can be mailed),
---   Exclusions (never sent), Bags (what to send), Run (filling the mail),
---   Look, Picker, PanelLists, Panel (the panel), Gamepad (Y never sends),
---   Mailbox (a visit, where the panel sits), Popup, Settings, Commands (/altc).
+-- This file: the saved settings and the game's events.
+--
+-- Files, one job each (in the .toc's load order):
+--   Rules.lua       what kinds of items a category can take
+--   Categories.lua  your categories: a kind of item and the alt who gets it
+--   Characters.lua  the characters mail can go to
+--   Exclusions.lua  items never mailed: picked, or by a word in their name
+--   Bags.lua        what's in the bags to send, and the next mail made from it
+--   Run.lua         a run at the mailbox: Start, check, Send, the next batch
+--   Look.lua        the look: the game's own window pieces
+--   Picker.lua      a small popup list under a button
+--   PanelLists.lua  the panel's lists: who gets a category, what to add, what's never sent
+--   Panel.lua       the panel beside the mailbox: rows, status, buttons
+--   Mailbox.lua     a mailbox visit, and where the panel sits
+--   Popup.lua       a popup in the game's style
+--   Settings.lua    the settings page
+--   Commands.lua    /altc: alts, exclusions, the list and settings by command
+--   AltCourier.lua  saved settings and the game's events
 
 local ADDON, addon = ...
 
