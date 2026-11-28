@@ -12,5 +12,5 @@ for _, ignored in ipairs({ "tests", "CURSEFORGE.md", "Media/icon.svg", "Media/ic
 end
 assert(packaging:find("manual%-changelog:"), "the hand-written changelog")
 assert(readFile("CHANGELOG.md"):find("\n## %d+%.%d+%.%d+\n"), "a Major.Minor.Patch section")
-assert(readFile("LICENSE"):find("Apache License", 1, true), "Apache 2.0")
+assert(readFile("LICENSE"):find("GNU GENERAL PUBLIC LICENSE", 1, true), "GPLv3")
 print("release_test: ok")

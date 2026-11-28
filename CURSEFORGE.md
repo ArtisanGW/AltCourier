@@ -11,7 +11,7 @@ Sends your crafting materials and Bind on Equip items to your alts. You pick the
 
 # License
 
-Apache License 2.0
+GNU General Public License version 3 (GPLv3)
 
 # Description
 
